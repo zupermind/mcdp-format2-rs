@@ -1,0 +1,15 @@
+[profile.ci]
+# Disable retries on CI
+retries = 0
+# Fail after the first test failure
+fail-fast = false
+# Show verbose output
+status-level = "all"
+
+[profile.ci.junit]
+path = "junit.xml"
+# These are the default values, specified for clarity.
+store-success-output = false
+store-failure-output = true
+
+# sigil 15d1d7f5a3869c061ff34e7168794293

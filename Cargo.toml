@@ -1,0 +1,62 @@
+[package]
+name = "mcdp-format2-rs"
+version = "2.17.0"
+edition = "2024"
+include = ["src/**/*", "Cargo.toml"]
+
+[dependencies.anyhow]
+version = "1"
+features = ["std"]
+default-features = false
+
+[dependencies.clap]
+version = "4.5"
+features = ["derive", "help", "std", "color", "usage", "error-context", "suggestions"]
+default-features = false
+
+[dependencies.console]
+version = "0.15"
+default-features = false
+
+[dependencies.glob]
+version = "0.3"
+default-features = false
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+default-features = false
+
+[dependencies.serde_cbor]
+version = "0.11"
+features = ["std"]
+default-features = false
+
+[dependencies.serde_json]
+version = "1.0"
+features = ["preserve_order", "std"]
+default-features = false
+
+[dependencies.serde_yaml]
+version = "0.9"
+default-features = false
+
+
+[dependencies.walkdir]
+version = "2"
+default-features = false
+
+
+[lib]
+path = "src/lib.rs"
+name = "mcdp_format2_rs"
+crate-type = ["lib"]
+required-features = []
+
+[[bin]]
+path = "src/main.rs"
+name = "mcdp-format2-rs-load"
+required-features = []
+[dependencies]
+flate2 = "1.1.2"
+ciborium = "0.2.2"

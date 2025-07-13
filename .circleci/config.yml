@@ -1,0 +1,110 @@
+version: 2.1
+parameters:
+  context_name:
+    type: string
+    default: 
+      <<#pipeline.git.branch>><<pipeline.parameters.branch>><</pipeline.git.branch>><<^pipeline.git.branch>>default_context<</pipeline.git.branch>>
+
+workflows:
+  test:
+    jobs:
+    - test1:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+
+orbs:
+  codecov: codecov/codecov@5
+
+jobs:
+
+  test1:
+
+    environment:
+      CARGO_HOME: /root/.cargo
+    docker:
+    - image: 
+        docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    steps:
+    - checkout
+    - run:
+        name: Prepare the environment
+        # language=bash
+        command: |
+          zuper-rs-ci all
+          mkdir -p out/test-results
+
+
+    - store_artifacts:
+        path: build-stats
+        destination: build-stats
+
+    - run:
+        name: pre-circle-tests
+        # language=bash
+        command: |
+          TARGET=pre-circle-tests
+          if make -n $TARGET ; then
+          make $TARGET
+          else
+          echo "Target $TARGET not defined"
+          fi
+
+
+#    - run:
+#        name: Build all
+#        command: |
+#          cargo build --profile test --no-default-features
+
+
+    - run:
+        name: Run tests
+          # language=bash
+        command: |
+          cargo llvm-cov --no-cfg-coverage nextest --lcov  \
+            --output-path lcov.info \
+            --all-targets \
+            --no-default-features \
+            -v \
+            --no-fail-fast \
+            --profile ci \
+            --config-file .circleci/nextest.toml \
+            --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+#          cargo nextest run \
+#            --all-targets \
+#            --no-default-features \
+#            -v \
+#            --no-fail-fast \
+#            --profile ci \
+#            --config-file .circleci/nextest.toml \
+#            --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+
+
+    - run:
+        name: copy results
+        when: always
+        command: |
+          cp target/nextest/ci/junit.xml out/test-results/report-${CIRCLE_NODE_INDEX}.xml || true
+
+    - run:
+        name: post-circle-tests
+        # language=bash
+        command: |
+          TARGET=post-circle-tests
+          if make -n $TARGET ; then
+              make $TARGET
+          else
+              echo "Target $TARGET not defined"
+          fi
+    - store_test_results:
+        path: out/test-results
+
+    - store_artifacts:
+        path: out/coverage
+        destination: coverage
+    - codecov/upload:
+        when: always
+    resource_class: zuper-ci-ns/r4
+
+# sigil 65e2ca0729e7e294d1029ae47b968373

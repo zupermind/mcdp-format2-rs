@@ -1,0 +1,7 @@
+circleci:
+  active: true
+  resource_class: zuper-ci-ns/r4
+
+version_style:
+  storage: only_tag
+  numbering: timestamp

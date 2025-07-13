@@ -1,0 +1,12 @@
+repos:
+- hooks:
+  - description: Format Rust code using rustfmt
+    entry: cargo +nightly fmt --
+    id: cargo-fmt
+    language: system
+    name: cargo fmt
+    pass_filenames: false
+    types: [rust]
+  repo: local
+
+# sigil ccaaf9c6be0d30e87d1f750e6741efb3
