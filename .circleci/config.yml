@@ -16,6 +16,7 @@ workflows:
 
 orbs:
   codecov: codecov/codecov@5
+  git-lfs: thekevjames/git-lfs@1
 
 jobs:
 
@@ -28,12 +29,8 @@ jobs:
         docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
     steps:
     - checkout
-    - run:
-        name: Install and checkout LFS files
-        command: |
-          apt-get update && apt-get install -y git-lfs
-          git lfs install
-          git lfs checkout
+    - git-lfs/initialize
+    - git-lfs/checkout
     - run:
         name: Prepare the environment
         # language=bash
