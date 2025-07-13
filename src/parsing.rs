@@ -140,14 +140,13 @@ impl ProcessingResults {
         self.failed_files.push((path, error));
     }
 
-    pub fn print_summary(&self, delete_failed: bool) {
+    pub fn print_summary(&self) {
         let total = self.success_count + self.failed_files.len();
 
         if !self.failed_files.is_empty() {
             println!(
-                "\n{} Failed files{}:",
-                style(self.failed_files.len()).red(),
-                if delete_failed { " (deleted)" } else { "" }
+                "\n{} Failed files:",
+                style(self.failed_files.len()).red()
             );
             for (path, error) in &self.failed_files {
                 println!("{} {}: {}", style(CROSS_MARK).red(), path.display(), error);
@@ -167,7 +166,6 @@ pub struct Config {
     pub paths: Vec<PathBuf>,
     pub verbose: bool,
     pub yaml: bool,
-    pub delete_failed: bool,
 }
 
 pub fn process_path(path: &Path, config: &Config, results: &mut ProcessingResults) {
@@ -185,7 +183,6 @@ pub fn process_path(path: &Path, config: &Config, results: &mut ProcessingResult
                             path,
                             config.verbose,
                             config.yaml,
-                            config.delete_failed,
                             results,
                         );
                     }
@@ -197,7 +194,6 @@ pub fn process_path(path: &Path, config: &Config, results: &mut ProcessingResult
             path,
             config.verbose,
             config.yaml,
-            config.delete_failed,
             results,
         );
     }
@@ -207,7 +203,6 @@ pub fn process_file(
     path: &Path,
     verbose: bool,
     yaml: bool,
-    delete_failed: bool,
     results: &mut ProcessingResults,
 ) {
     print!("Processing file: {} ... ", path.display());
@@ -243,15 +238,6 @@ pub fn process_file(
         Err(e) => {
             if !verbose && !yaml {
                 println!("{} {}", style(CROSS_MARK).red(), style("Failed").red());
-            }
-            if delete_failed {
-                if let Err(delete_err) = std::fs::remove_file(path) {
-                    println!(
-                        "{} Failed to delete file: {}",
-                        style(CROSS_MARK).red(),
-                        delete_err
-                    );
-                }
             }
             results.add_failure(path.to_path_buf(), e);
         }

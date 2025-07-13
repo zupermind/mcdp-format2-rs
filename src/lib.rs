@@ -19,10 +19,9 @@ mod tests {
     fn test_parse_all_example_files() {
         let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples");
         
-        if !examples_dir.exists() {
-            println!("Examples directory not found at {:?}, skipping test", examples_dir);
-            return;
-        }
+        assert!(examples_dir.exists(), 
+            "Examples directory not found at {:?}. This test requires example files to be present.", 
+            examples_dir);
 
         let mut total_files = 0;
         let mut success_count = 0;
@@ -87,13 +86,16 @@ mod tests {
         
         println!("Success rate: {:.1}%", success_rate);
         
+        // Ensure we have a reasonable number of test files
+        assert!(total_files >= 100, 
+            "Expected at least 100 example files to test, but only found {}. The examples directory may be incomplete.",
+            total_files);
+
         // For this test, we'll consider it successful if we can parse at least 80% of files
         // This allows for some files that might be intentionally malformed or test edge cases
-        if total_files > 0 {
-            assert!(success_rate >= 80.0, 
-                "Success rate {:.1}% is below the required 80%. {} out of {} files failed to parse.", 
-                success_rate, failed_files.len(), total_files);
-        }
+        assert!(success_rate >= 100.0,
+            "Success rate {:.1}% is below the required 100%. {} out of {} files failed to parse.",
+            success_rate, failed_files.len(), total_files);
     }
 
     fn test_parse_single_file(path: &Path) -> anyhow::Result<()> {
@@ -109,10 +111,9 @@ mod tests {
     fn test_parse_specific_file_types() {
         let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples");
         
-        if !examples_dir.exists() {
-            println!("Examples directory not found, skipping test");
-            return;
-        }
+        assert!(examples_dir.exists(), 
+            "Examples directory not found at {:?}. This test requires example files to be present.", 
+            examples_dir);
 
         // Test a few specific file types we know should exist
         let test_patterns = vec![

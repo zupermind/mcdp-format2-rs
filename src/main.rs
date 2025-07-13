@@ -25,10 +25,6 @@ struct Cli {
     /// Print as YAML
     #[arg(short = 'y', long)]
     yaml: bool,
-
-    /// Delete files that fail to parse
-    #[arg(long)]
-    delete_failed: bool,
 }
 fn parse_args() -> Result<Config> {
     let cli = Cli::parse();
@@ -40,7 +36,6 @@ fn parse_args() -> Result<Config> {
         paths: cli.paths,
         verbose: cli.verbose,
         yaml: cli.yaml,
-        delete_failed: cli.delete_failed,
     })
 }
 
@@ -56,7 +51,7 @@ fn main() -> Result<()> {
         process_path(path, &config, &mut results);
     }
 
-    results.print_summary(config.delete_failed);
+    results.print_summary();
 
     // Exit with error if any files failed
     if !results.failed_files.is_empty() {
