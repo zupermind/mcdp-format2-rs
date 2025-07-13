@@ -29,12 +29,6 @@ jobs:
     steps:
     - checkout
     - run:
-        name: Checkout LFS files
-        command: |
-          git lfs install
-          git lfs fetch
-          git lfs checkout
-    - run:
         name: Prepare the environment
         # language=bash
         command: |
