@@ -9,7 +9,8 @@ test-release:
 test-verbose:
 	cargo run --  --verbose ../../samples
 
-
+pre-circle-tests:
+	git lfs checkout
 
 generate:
 	$(MAKE) -C ../../mcdp-formats preprocess
