@@ -29,6 +29,12 @@ jobs:
     steps:
     - checkout
     - run:
+        name: Install and checkout LFS files
+        command: |
+          apt-get update && apt-get install -y git-lfs
+          git lfs install
+          git lfs checkout
+    - run:
         name: Prepare the environment
         # language=bash
         command: |
