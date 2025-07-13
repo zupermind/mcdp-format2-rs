@@ -5,7 +5,6 @@ use glob::Pattern;
 use mcdp_format2_rs::parsing::process_path;
 use mcdp_format2_rs::parsing::Config;
 use mcdp_format2_rs::parsing::ProcessingResults;
-use std::io::Read;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -16,7 +15,7 @@ struct Cli {
     paths: Vec<PathBuf>,
 
     /// File pattern to match (e.g. "*.yaml")
-    #[arg(short, long, default_value = "*.yaml")]
+    #[arg(short, long, default_value = "*.mcdp2.*")]
     pattern: String,
 
     /// Show verbose output
@@ -69,7 +68,29 @@ fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use mcdp_format2_rs::parsing::{DataFormat, parse_data};
 
     #[test]
-    fn test_dummy() {}
+    fn test_yaml_parsing() {
+        let yaml_content = b"name: test\nvalue: 42";
+        let result = parse_data(yaml_content, DataFormat::YAML);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_format_detection() {
+        use mcdp_format2_rs::parsing::detect_format;
+        use std::path::Path;
+        
+        assert_eq!(detect_format(Path::new("test.yaml")), DataFormat::YAML);
+        assert_eq!(detect_format(Path::new("test.cbor")), DataFormat::CBOR);
+        assert_eq!(detect_format(Path::new("test.json")), DataFormat::JSON);
+    }
+
+    #[test]
+    fn test_json_parsing() {
+        let json_content = br#"{"name": "test", "value": 42, "active": true, "data": [1, 2, 3]}"#;
+        let result = parse_data(json_content, DataFormat::JSON);
+        assert!(result.is_ok());
+    }
 }

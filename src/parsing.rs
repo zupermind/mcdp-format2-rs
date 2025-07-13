@@ -24,7 +24,7 @@ pub enum DataFormat {
     Unknown(String),
 }
 
-fn detect_format(path: &Path) -> DataFormat {
+pub fn detect_format(path: &Path) -> DataFormat {
     let just_basename = path.file_name().and_then(OsStr::to_str).unwrap_or("");
 
     if just_basename.ends_with(".json.gz") {
@@ -67,30 +67,36 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
                 }
             };
 
-            let r = TODO(decoded);
-            match r {
-                Ok(x) => {
-                    if x.len() != 1 {
-                        return anyhow::anyhow!("Expected one document, got {}", x.len());
-                    }
-                    Ok(x.first().unwrap().clone())
-                }
-                Err(e) => anyhow::anyhow!("YAML parsing error:\n{e}"),
-            }
+            let yaml_value: serde_yaml::Value = serde_yaml::from_str(decoded)
+                .context("Failed to parse YAML")?;
+            
+            // Convert serde_yaml::Value to ciborium::value::Value
+            let cbor_value = yaml_to_cbor_value(yaml_value)?;
+            Ok(cbor_value)
         }
         DataFormat::CBOR | DataFormat::CBOR_GZ => {
-            let t0 = std::time::Instant::now();
-            let r = TODO(&contents)?;
-            let _time_mine = t0.elapsed();
-
-            Ok(r)
+            let cbor_value: ciborium::value::Value = ciborium::de::from_reader(&contents[..])
+                .context("Failed to parse CBOR")?;
+            Ok(cbor_value)
         }
         DataFormat::JSON | DataFormat::JSON_GZ => {
-            anyhow::anyhow!("JSON parsing not implemented")
+            let decoded = match std::str::from_utf8(&contents) {
+                Ok(s) => s,
+                Err(e) => {
+                    return Err(anyhow::anyhow!("UTF decoding error: {e:?}"));
+                }
+            };
+
+            let json_value: serde_json::Value = serde_json::from_str(decoded)
+                .context("Failed to parse JSON")?;
+            
+            // Convert serde_json::Value to ciborium::value::Value
+            let cbor_value = json_to_cbor_value(json_value)?;
+            Ok(cbor_value)
         }
 
         DataFormat::Unknown(_) => {
-            anyhow::anyhow!("Unknown format: {:?}", format)
+            Err(anyhow::anyhow!("Unknown format: {:?}", format))
         }
     }
 }
@@ -250,4 +256,89 @@ pub fn process_file(
             results.add_failure(path.to_path_buf(), e);
         }
     }
+}
+
+/// Convert serde_yaml::Value to ciborium::value::Value
+fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> Result<ciborium::value::Value> {
+    use ciborium::value::Value;
+    
+    let result = match yaml_value {
+        serde_yaml::Value::Null => Value::Null,
+        serde_yaml::Value::Bool(b) => Value::Bool(b),
+        serde_yaml::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Value::Integer(i.into())
+            } else if let Some(f) = n.as_f64() {
+                Value::Float(f)
+            } else {
+                return Err(anyhow::anyhow!("Invalid number format"));
+            }
+        }
+        serde_yaml::Value::String(s) => Value::Text(s),
+        serde_yaml::Value::Sequence(seq) => {
+            let mut vec = Vec::new();
+            for item in seq {
+                vec.push(yaml_to_cbor_value(item)?);
+            }
+            Value::Array(vec)
+        }
+        serde_yaml::Value::Mapping(map) => {
+            let mut cbor_map = Vec::new();
+            for (k, v) in map {
+                let key = yaml_to_cbor_value(k)?;
+                let value = yaml_to_cbor_value(v)?;
+                cbor_map.push((key, value));
+            }
+            Value::Map(cbor_map)
+        }
+        serde_yaml::Value::Tagged(tagged) => {
+            // For tagged values, we'll just use the inner value for now
+            yaml_to_cbor_value(tagged.value)?
+        }
+    };
+    
+    Ok(result)
+}
+
+/// Convert serde_json::Value to ciborium::value::Value
+fn json_to_cbor_value(json_value: serde_json::Value) -> Result<ciborium::value::Value> {
+    use ciborium::value::Value;
+    
+    let result = match json_value {
+        serde_json::Value::Null => Value::Null,
+        serde_json::Value::Bool(b) => Value::Bool(b),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Value::Integer(i.into())
+            } else if let Some(f) = n.as_f64() {
+                Value::Float(f)
+            } else {
+                return Err(anyhow::anyhow!("Invalid number format"));
+            }
+        }
+        serde_json::Value::String(s) => Value::Text(s),
+        serde_json::Value::Array(arr) => {
+            let mut vec = Vec::new();
+            for item in arr {
+                vec.push(json_to_cbor_value(item)?);
+            }
+            Value::Array(vec)
+        }
+        serde_json::Value::Object(obj) => {
+            let mut cbor_map = Vec::new();
+            for (k, v) in obj {
+                let key = Value::Text(k);  // JSON object keys are always strings
+                let value = json_to_cbor_value(v)?;
+                cbor_map.push((key, value));
+            }
+            Value::Map(cbor_map)
+        }
+    };
+    
+    Ok(result)
+}
+
+/// Parse data from bytes using the specified format
+pub fn parse_data(contents: &[u8], format: DataFormat) -> Result<ciborium::value::Value> {
+    interpret_cvalue(contents, &format)
 }
