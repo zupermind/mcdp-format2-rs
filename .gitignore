@@ -26,3 +26,4 @@ Cargo.lock
 
 # sigil 695673c5865ecd948b9775f962fdbfb1
 .idea
+*.ok
