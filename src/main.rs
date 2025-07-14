@@ -2,10 +2,16 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use glob::Pattern;
-use mcdp_format2_rs::Config;
+use mcdp_format2_rs::parsing::list_paths;
+use mcdp_format2_rs::parsing::read_mcdp_root;
 use mcdp_format2_rs::Root;
-use mcdp_format2_rs::list_paths;
 use std::path::PathBuf;
+
+struct Config {
+    pub pattern: Pattern,
+    pub paths: Vec<PathBuf>,
+    pub verbose: bool,
+}
 
 #[derive(Parser)]
 #[command(author, version, about = "MCDP file parser")]
@@ -21,10 +27,6 @@ struct Cli {
     /// Show verbose output
     #[arg(short, long)]
     verbose: bool,
-
-    /// Print as YAML
-    #[arg(short = 'y', long)]
-    yaml: bool,
 }
 fn parse_args() -> Result<Config> {
     let cli = Cli::parse();
@@ -35,7 +37,6 @@ fn parse_args() -> Result<Config> {
         pattern,
         paths: cli.paths,
         verbose: cli.verbose,
-        yaml: cli.yaml,
     })
 }
 
@@ -55,7 +56,7 @@ fn main() -> Result<()> {
     let n = all_paths.len();
     for (i, p) in all_paths.iter().enumerate() {
         println!("{}/{}: {}", i, n, p.display());
-        let root: Root = mcdp_format2_rs::parsing::read(p)?;
+        let root: Root = read_mcdp_root(p)?;
 
         if config.verbose {
             println!("Parsed:\n{:#?}", root);

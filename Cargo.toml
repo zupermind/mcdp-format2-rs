@@ -1,6 +1,6 @@
 [package]
 name = "mcdp-format2-rs"
-version = "2.17.0"
+version = "2.17.1"
 edition = "2024"
 include = ["src/**/*", "Cargo.toml"]
 
@@ -8,7 +8,6 @@ include = ["src/**/*", "Cargo.toml"]
 anyhow = { version = "1", features = ["std"], default-features = false }
 ciborium = { version = "0.2.2", default-features = false,  features = ["default"]}
 clap = { version = "4.5", features = ["derive", "help", "std", "color", "usage", "error-context", "suggestions"], default-features = false }
-console = { version = "0.15", default-features = false }
 flate2 = { version = "1.1.2", features = ["zlib"], default-features = false }
 glob = { version = "0.3", default-features = false }
 serde = { version = "1.0", features = ["derive"], default-features = false }

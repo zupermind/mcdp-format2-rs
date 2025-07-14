@@ -1,5 +1,4 @@
 use anyhow::Context;
-use console::Emoji;
 use glob::Pattern;
 use std::ffi::OsStr;
 use std::fs::File;
@@ -7,8 +6,13 @@ use std::path::Path;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
+use crate::Root;
 pub use anyhow::Result;
+use ciborium;
+use ciborium::de::from_reader;
+use ciborium::ser::into_writer;
 use flate2::read::GzDecoder;
+use serde::de::DeserializeOwned;
 use std::io::Read;
 
 #[allow(non_camel_case_types)]
@@ -105,7 +109,7 @@ fn decompress_gz(compressed: &[u8]) -> Result<Vec<u8>, std::io::Error> {
     Ok(decompressed)
 }
 
-pub fn read_file(path: &Path) -> Result<Vec<u8>> {
+fn read_file(path: &Path) -> Result<Vec<u8>> {
     let mut file = File::open(path).context("Failed to open file")?;
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)
@@ -113,28 +117,15 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>> {
     Ok(contents)
 }
 
-static CHECK_MARK: Emoji<'_, '_> = Emoji("✓", "√");
-static CROSS_MARK: Emoji<'_, '_> = Emoji("✗", "×");
-
-pub struct Config {
-    pub pattern: Pattern,
-    pub paths: Vec<PathBuf>,
-    pub verbose: bool,
-    pub yaml: bool,
-}
-
-pub fn list_paths(path: &Path, pattern: Pattern) -> anyhow::Result<Vec<PathBuf>> {
+/// List all paths in a directory that match a given glob pattern.
+pub fn list_paths(path: &Path, pattern: Pattern) -> Result<Vec<PathBuf>> {
     let mut res = Vec::new();
     list_paths_recursive(path, pattern, &mut res)?;
 
     Ok(res)
 }
 
-pub fn list_paths_recursive(
-    path: &Path,
-    pattern: Pattern,
-    results: &mut Vec<PathBuf>,
-) -> anyhow::Result<()> {
+fn list_paths_recursive(path: &Path, pattern: Pattern, results: &mut Vec<PathBuf>) -> Result<()> {
     if path.is_dir() {
         for entry in WalkDir::new(path)
             .follow_links(true)
@@ -161,11 +152,6 @@ pub fn list_paths_recursive(
     Ok(())
 }
 
-use ciborium;
-use ciborium::de::from_reader;
-use ciborium::ser::into_writer;
-use serde::de::DeserializeOwned;
-
 fn from_cbor_value<T: DeserializeOwned>(val: &ciborium::value::Value) -> Result<T> {
     let mut buf = Vec::new();
     into_writer(val, &mut buf)?; // Serialize the Value to CBOR bytes
@@ -173,6 +159,7 @@ fn from_cbor_value<T: DeserializeOwned>(val: &ciborium::value::Value) -> Result<
     Ok(t)
 }
 
+/// Read a file and deserialize its contents into a type T.
 pub fn read<T: DeserializeOwned>(path: &Path) -> Result<T> {
     let format = detect_format(path);
     let contents = read_file(path)?;
@@ -180,6 +167,12 @@ pub fn read<T: DeserializeOwned>(path: &Path) -> Result<T> {
 
     let root: T = from_cbor_value(&data)?;
 
+    Ok(root)
+}
+
+/// Read a file and deserialize its contents into one of the MCDP Format 2 Root types.
+pub fn read_mcdp_root(path: &Path) -> Result<Root> {
+    let root: Root = read(path)?;
     Ok(root)
 }
 
