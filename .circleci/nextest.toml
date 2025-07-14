@@ -6,10 +6,12 @@ fail-fast = false
 # Show verbose output
 status-level = "all"
 
+slow-timeout = { period = "30s", terminate-after = 10 }
+
+
 [profile.ci.junit]
 path = "junit.xml"
 # These are the default values, specified for clarity.
 store-success-output = false
 store-failure-output = true
 
-# sigil 15d1d7f5a3869c061ff34e7168794293
