@@ -1,5 +1,4 @@
 use anyhow::Context;
-use console::style;
 use console::Emoji;
 use glob::Pattern;
 use std::ffi::OsStr;
@@ -67,16 +66,16 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
                 }
             };
 
-            let yaml_value: serde_yaml::Value = serde_yaml::from_str(decoded)
-                .context("Failed to parse YAML")?;
-            
+            let yaml_value: serde_yaml::Value =
+                serde_yaml::from_str(decoded).context("Failed to parse YAML")?;
+
             // Convert serde_yaml::Value to ciborium::value::Value
             let cbor_value = yaml_to_cbor_value(yaml_value)?;
             Ok(cbor_value)
         }
         DataFormat::CBOR | DataFormat::CBOR_GZ => {
-            let cbor_value: ciborium::value::Value = ciborium::de::from_reader(&contents[..])
-                .context("Failed to parse CBOR")?;
+            let cbor_value: ciborium::value::Value =
+                ciborium::de::from_reader(&contents[..]).context("Failed to parse CBOR")?;
             Ok(cbor_value)
         }
         DataFormat::JSON | DataFormat::JSON_GZ => {
@@ -87,17 +86,15 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
                 }
             };
 
-            let json_value: serde_json::Value = serde_json::from_str(decoded)
-                .context("Failed to parse JSON")?;
-            
+            let json_value: serde_json::Value =
+                serde_json::from_str(decoded).context("Failed to parse JSON")?;
+
             // Convert serde_json::Value to ciborium::value::Value
             let cbor_value = json_to_cbor_value(json_value)?;
             Ok(cbor_value)
         }
 
-        DataFormat::Unknown(_) => {
-            Err(anyhow::anyhow!("Unknown format: {:?}", format))
-        }
+        DataFormat::Unknown(_) => Err(anyhow::anyhow!("Unknown format: {:?}", format)),
     }
 }
 
@@ -119,48 +116,6 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>> {
 static CHECK_MARK: Emoji<'_, '_> = Emoji("✓", "√");
 static CROSS_MARK: Emoji<'_, '_> = Emoji("✗", "×");
 
-pub struct ProcessingResults {
-    pub failed_files: Vec<(PathBuf, anyhow::Error)>,
-    pub success_count: usize,
-}
-
-impl ProcessingResults {
-    pub fn new() -> Self {
-        Self {
-            failed_files: Vec::new(),
-            success_count: 0,
-        }
-    }
-
-    pub fn add_success(&mut self) {
-        self.success_count += 1;
-    }
-
-    pub fn add_failure(&mut self, path: PathBuf, error: anyhow::Error) {
-        self.failed_files.push((path, error));
-    }
-
-    pub fn print_summary(&self) {
-        let total = self.success_count + self.failed_files.len();
-
-        if !self.failed_files.is_empty() {
-            println!(
-                "\n{} Failed files:",
-                style(self.failed_files.len()).red()
-            );
-            for (path, error) in &self.failed_files {
-                println!("{} {}: {}", style(CROSS_MARK).red(), path.display(), error);
-            }
-        }
-        println!("\nProcessing Summary:");
-        println!(
-            "Successfully processed: {} of {} files",
-            style(self.success_count).green(),
-            total
-        );
-    }
-}
-
 pub struct Config {
     pub pattern: Pattern,
     pub paths: Vec<PathBuf>,
@@ -168,7 +123,18 @@ pub struct Config {
     pub yaml: bool,
 }
 
-pub fn process_path(path: &Path, config: &Config, results: &mut ProcessingResults) {
+pub fn list_paths(path: &Path, pattern: Pattern) -> anyhow::Result<Vec<PathBuf>> {
+    let mut res = Vec::new();
+    list_paths_recursive(path, pattern, &mut res)?;
+
+    Ok(res)
+}
+
+pub fn list_paths_recursive(
+    path: &Path,
+    pattern: Pattern,
+    results: &mut Vec<PathBuf>,
+) -> anyhow::Result<()> {
     if path.is_dir() {
         for entry in WalkDir::new(path)
             .follow_links(true)
@@ -178,76 +144,49 @@ pub fn process_path(path: &Path, config: &Config, results: &mut ProcessingResult
             let path = entry.path();
             if path.is_file() {
                 if let Some(file_name) = path.file_name().and_then(OsStr::to_str) {
-                    if config.pattern.matches(file_name) {
-                        process_file(
-                            path,
-                            config.verbose,
-                            config.yaml,
-                            results,
-                        );
+                    if pattern.matches(file_name) {
+                        list_paths_recursive(path, pattern.clone(), results)?;
                     }
                 }
             }
         }
     } else {
-        process_file(
-            path,
-            config.verbose,
-            config.yaml,
-            results,
-        );
+        let filename = path.file_name().and_then(OsStr::to_str).unwrap_or("");
+
+        if pattern.matches(filename) {
+            results.push(path.to_path_buf());
+        }
     }
+
+    Ok(())
 }
 
-pub fn process_file(
-    path: &Path,
-    verbose: bool,
-    yaml: bool,
-    results: &mut ProcessingResults,
-) {
-    print!("Processing file: {} ... ", path.display());
+use ciborium;
+use ciborium::de::from_reader;
+use ciborium::ser::into_writer;
+use serde::de::DeserializeOwned;
 
-    match (|| -> anyhow::Result<()> {
-        let format = detect_format(path);
-        let contents = read_file(path)?;
-        let data = parse_data(&contents, format)?;
+fn from_cbor_value<T: DeserializeOwned>(val: &ciborium::value::Value) -> Result<T> {
+    let mut buf = Vec::new();
+    into_writer(val, &mut buf)?; // Serialize the Value to CBOR bytes
+    let t = from_reader(buf.as_slice())?; // Deserialize CBOR bytes into T
+    Ok(t)
+}
 
-        if verbose || yaml {
-            println!();
-            if yaml {
-                let yaml_string =
-                    serde_yaml::to_string(&data).context("Failed to convert to YAML")?;
-                println!("{}", yaml_string);
+pub fn read<T: DeserializeOwned>(path: &Path) -> Result<T> {
+    let format = detect_format(path);
+    let contents = read_file(path)?;
+    let data: ciborium::Value = parse_data(&contents, format)?;
 
-                let json_string =
-                    serde_json::to_string(&data).context("Failed to convert to JSON")?;
-                println!("{}", json_string);
-            }
-            if verbose {
-                println!("{:#?}", data);
-            }
-        }
-        Ok(())
-    })() {
-        Ok(_) => {
-            if !verbose && !yaml {
-                println!("{} {}", style(CHECK_MARK).green(), style("Success").green());
-            }
-            results.add_success();
-        }
-        Err(e) => {
-            if !verbose && !yaml {
-                println!("{} {}", style(CROSS_MARK).red(), style("Failed").red());
-            }
-            results.add_failure(path.to_path_buf(), e);
-        }
-    }
+    let root: T = from_cbor_value(&data)?;
+
+    Ok(root)
 }
 
 /// Convert serde_yaml::Value to ciborium::value::Value
 fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> Result<ciborium::value::Value> {
     use ciborium::value::Value;
-    
+
     let result = match yaml_value {
         serde_yaml::Value::Null => Value::Null,
         serde_yaml::Value::Bool(b) => Value::Bool(b),
@@ -282,14 +221,14 @@ fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> Result<ciborium::value::
             yaml_to_cbor_value(tagged.value)?
         }
     };
-    
+
     Ok(result)
 }
 
 /// Convert serde_json::Value to ciborium::value::Value
 fn json_to_cbor_value(json_value: serde_json::Value) -> Result<ciborium::value::Value> {
     use ciborium::value::Value;
-    
+
     let result = match json_value {
         serde_json::Value::Null => Value::Null,
         serde_json::Value::Bool(b) => Value::Bool(b),
@@ -313,14 +252,14 @@ fn json_to_cbor_value(json_value: serde_json::Value) -> Result<ciborium::value::
         serde_json::Value::Object(obj) => {
             let mut cbor_map = Vec::new();
             for (k, v) in obj {
-                let key = Value::Text(k);  // JSON object keys are always strings
+                let key = Value::Text(k); // JSON object keys are always strings
                 let value = json_to_cbor_value(v)?;
                 cbor_map.push((key, value));
             }
             Value::Map(cbor_map)
         }
     };
-    
+
     Ok(result)
 }
 
