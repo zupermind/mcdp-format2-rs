@@ -14,10 +14,13 @@ pre-circle-tests:
 	  git lfs fetch
 	  git lfs checkout
 
+the_schema=../../mcdp-formats/out/schema-no-concrete.yaml
+
 generate:
 	$(MAKE) -C ../../mcdp-formats preprocess
 	cargo run -p zuper-rs-schemas --bin zuper-rs-schemas -- rust  \
 		--only-concrete \
-		--schema ../../mcdp-formats/out/schema-no-concrete.yaml \
+		--schema $(the_schema) \
 		--target src/types.rs
 
+	cp ${the_schema} mcdp2-openapi-schema.yaml
