@@ -108,7 +108,7 @@ fn decompress_gz(compressed: &[u8]) -> Result<Vec<u8>, std::io::Error> {
     Ok(decompressed)
 }
 
-pub fn read_file(path: &Path) -> anyhow::Result<Vec<u8>> {
+pub fn read_file(path: &Path) -> Result<Vec<u8>> {
     let mut file = File::open(path).context("Failed to open file")?;
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)
