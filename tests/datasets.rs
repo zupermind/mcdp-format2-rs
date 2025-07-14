@@ -1,5 +1,5 @@
-use mcdp_format2_rs::parsing::read;
 use mcdp_format2_rs::Root;
+use mcdp_format2_rs::parsing::read;
 use std::path::Path;
 
 fn run_test_file(path: &Path) -> datatest_stable::Result<()> {

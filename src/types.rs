@@ -20,17 +20,27 @@ pub mod concrete {
         /// Type marker
         pub r#type: String,
     }
+    /// Checks for the maps, as used in test cases.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum Check {
+        /// Check for a L1Map.
         L1Check(L1Check),
+        /// Check for a LMap.
         LCheck(LCheck),
+        /// Check for a monotone map.
         MapCheck(MapCheck),
+        /// Check for a SL1Map.
         SL1Check(SL1Check),
+        /// Check for a SL1Map.
         SLCheck(SLCheck),
+        /// Check for a SU1Map.
         SU1Check(SU1Check),
+        /// Check for a SUMap.
         SUCheck(SUCheck),
+        /// Check for a U1Map.
         U1Check(U1Check),
+        /// Check for a UMap.
         UCheck(UCheck),
     }
     /// Represents a connection between two nodes in the NDP graph
@@ -43,49 +53,85 @@ pub mod concrete {
         /// Type marker.
         pub r#type: String,
     }
+    /// The source of a connection.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum ConnectionSource {
+        /// The source of a connection is a functionality of the composite graph.
         ModelFunctionality(ModelFunctionality),
+        /// The source of a connection is a requirement of another node.
         NodeRequirement(NodeRequirement),
     }
+    /// The target of a connection.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum ConnectionTarget {
+        /// The target is the requirement of the ambient model.
         ModelRequirement(ModelRequirement),
+        /// The target is the functionality of another subproblem.
         NodeFunctionality(NodeFunctionality),
     }
+    /// Design problem with implementations (DPI)
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum DP {
+        /// Compares resources to a function and a set of constants (conjunction).
         DP_All_Constants_And_F_Leq_R(DP_All_Constants_And_F_Leq_R),
+        /// Compare a resource to a set of constants
         DP_All_Constants_Leq_R(DP_All_Constants_Leq_R),
+        /// Compares a vector of functions to a resource (conjunction).
         DP_All_Fi_Leq_R(DP_All_Fi_Leq_R),
+        /// Compares functionality and resources in an ambient poset.
         DP_AmbientConversion(DP_AmbientConversion),
+        /// Compares resources to a function and a set of constants (disjunction).
         DP_Any_Constants_Or_F_Leq_R(DP_Any_Constants_Or_F_Leq_R),
+        /// Compares a vector of functions to a resource (disjunction).
         DP_Any_Fi_Leq_R(DP_Any_Fi_Leq_R),
+        /// Multi-resolution DP
         DP_C_ExplicitApprox(DP_C_ExplicitApprox),
+        /// Intersection of design problems
         DP_C_Intersection(DP_C_Intersection),
+        /// Monoidal product of design problems.
         DP_C_Parallel(DP_C_Parallel),
+        /// Series composition of DPs.
         DP_C_Series(DP_C_Series),
+        /// Trace of a design problem.
         DP_C_Trace(DP_C_Trace),
+        /// Union of design problems (DPs).
         DP_C_Union(DP_C_Union),
+        /// A DP defined explicitly by a set of options.
         DP_Catalog(DP_Catalog),
+        /// An "opaque" DP defined explicitly by its interface.
         DP_Compiled(DP_Compiled),
+        /// Compare a functionality to a set of constants
         DP_F_Leq_All_Constants(DP_F_Leq_All_Constants),
+        /// Compares a functionality to a resource and a set of constants (conjunction).
         DP_F_Leq_All_R_And_Constants(DP_F_Leq_All_R_And_Constants),
+        /// Compares a vector of resources to a function (conjunction).
         DP_F_Leq_All_Ri(DP_F_Leq_All_Ri),
+        /// Compares a functionality to a resource and a set of constants (disjunction).
         DP_F_Leq_Any_R_And_Constants(DP_F_Leq_Any_R_And_Constants),
+        /// Compares a vector of resources to a function (disjunction).
         DP_F_Leq_Any_Ri(DP_F_Leq_Any_Ri),
+        /// The DP that is always false.
         DP_False(DP_False),
+        /// Identity with limit to the functionality.
         DP_FuncNotMoreThan(DP_FuncNotMoreThan),
+        /// A DP with exactly one implementation.
         DP_GenericConstant(DP_GenericConstant),
+        /// The identity design problem.
         DP_Identity(DP_Identity),
+        /// Enforces isomorphism between functionalities and requirements.
         DP_Iso(DP_Iso),
+        /// A DP generated from a monotone map from requirements to functionalities.
         DP_LiftL(DP_LiftL),
+        /// A DP generated from a monotone map from functionality to requirements.
         DP_LiftU(DP_LiftU),
+        /// Identity with limit to the resource.
         DP_ResNotLessThan(DP_ResNotLessThan),
+        /// The DP that is always true.
         DP_True(DP_True),
+        /// Placeholder for an unknown design problem.
         DP_Unknown(DP_Unknown),
     }
     /// Compares resources to a function and a set of constants (conjunction).
@@ -779,37 +825,67 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         /// Expected result (a lower set).
         pub y: Box<LowerSet>,
     }
+    /// Map to lower sets of functionalities.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum L1Map {
+        /// Co-domain sum combination
         L1_C_CodSum(L1_C_CodSum),
+        /// Co-domain (smash) sum combination
         L1_C_CodSumSmash(L1_C_CodSumSmash),
+        /// Domain union
         L1_C_DomUnion(L1_C_DomUnion),
+        /// Intersection
         L1_C_Intersection(L1_C_Intersection),
+        /// Monoidal product
         L1_C_Parallel(L1_C_Parallel),
+        /// From product to intersection
         L1_C_ProdIntersection(L1_C_ProdIntersection),
+        /// Product
         L1_C_Product(L1_C_Product),
+        /// Refines the domain of a monotone map.
         L1_C_RefineDomain(L1_C_RefineDomain),
+        /// Series composition
         L1_C_Series(L1_C_Series),
+        /// Trace
         L1_C_Trace(L1_C_Trace),
+        /// Union
         L1_C_Union(L1_C_Union),
+        /// Decorates a map with units.
         L1_C_WrapUnits(L1_C_WrapUnits),
+        /// Map induced by a catalog of options.
         L1_Catalog(L1_Catalog),
+        /// Constant map
         L1_Constant(L1_Constant),
+        /// Returns the entire poset
         L1_Entire(L1_Entire),
+        /// Map defined pointwise
         L1_Explicit(L1_Explicit),
+        /// Filters based on a monotone map.
         L1_FromFilter(L1_FromFilter),
+        /// Lift of the identity map
         L1_Identity(L1_Identity),
+        /// Intersection of principal lower sets.
         L1_IntersectionOfPrinLowerSets(L1_IntersectionOfPrinLowerSets),
+        /// Finite-resolution optimistic approximation of the inverse of a multiplication map.
         L1_InvMul_Opt(L1_InvMul_Opt),
+        /// Finite-resolution pessimistic approximation of the inverse of an addition map.
         L1_InvMul_Pes(L1_InvMul_Pes),
+        /// Finite-resolution optimistic approximation of the inverse of a multiplication map.
         L1_InvSum_Opt(L1_InvSum_Opt),
+        /// Finite-resolution pessimistic approximation of the inverse of an addition map.
         L1_InvSum_Pes(L1_InvSum_Pes),
+        /// Lower inverse of a monotone map
         L1_L_Linv(L1_L_Linv),
+        /// Lifts a monotone map
         L1_Lift(L1_Lift),
+        /// Represent a principal lower set
         L1_RepresentPrincipalLowerSet(L1_RepresentPrincipalLowerSet),
+        /// Lower inverse for the meet map
         L1_TopAlternating(L1_TopAlternating),
+        /// Union of principal lower sets.
         L1_UnionOfPrinLowerSets(L1_UnionOfPrinLowerSets),
+        /// Placeholder for an unknown map.
         L1_Unknown(L1_Unknown),
     }
     /// Co-domain sum combination
@@ -1253,22 +1329,37 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         pub x: AnyValue,
         pub y: Box<LowerSet>,
     }
+    /// Map to lower sets of functionalities and implementations.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum LMap {
+        /// Transforms the implementation of another map.
         L_C_ITransform(L_C_ITransform),
+        /// Intersection of maps
         L_C_Intersection(L_C_Intersection),
+        /// Monoidal product
         L_C_Parallel(L_C_Parallel),
+        /// Refines the domain of a monotone map
         L_C_RefineDomain(L_C_RefineDomain),
+        /// Series composition
         L_C_Series(L_C_Series),
+        /// Trace
         L_C_Trace(L_C_Trace),
+        /// Union of maps
         L_C_Union(L_C_Union),
+        /// Decorates a map with units.
         L_C_WrapUnits(L_C_WrapUnits),
+        /// LMap for a catalog
         L_Catalog(L_Catalog),
+        /// Constant map
         L_Constant(L_Constant),
+        /// Identity morphism
         L_Identity(L_Identity),
+        /// Lifts a L1Map morphisms with a constant value for the implementation.
         L_L_Lift1_Constant(L_L_Lift1_Constant),
+        /// Lifts a L1Map morphism with a function to compute the implementation.
         L_L_Lift1_Transform(L_L_Lift1_Transform),
+        /// Placeholder for an unknown map
         L_Unknown(L_Unknown),
     }
     /// Transforms the implementation of another map.
@@ -1492,10 +1583,13 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         pub kdom: Box<Poset>,
         pub kimp: Box<Poset>,
     }
+    /// Represents a lower set in a poset.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum LowerSet {
+        /// A lower set defined as the down closure of a finite set of points.
         LowerSet_LowerClosure(LowerSet_LowerClosure),
+        /// Unused
         LowerSet_Unused(LowerSet_Unused),
     }
     /// A lower set defined as the down closure of a finite set of points.
@@ -1672,7 +1766,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         pub labels: Option<Vec<String>>,
         pub maps: Vec<Box<MonotoneMap>>,
     }
-    /// Tests constant LEQ value.
+    /// Tests $\text{constant} \leq x$
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_C_Leq_X {
         /// A human-readable description of the object used for debug purposes.
@@ -1706,7 +1800,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         /// The monotone map that is lifted.
         pub m: Box<MonotoneMap>,
     }
-    /// Tests constant LT value.
+    /// Tests $\text{constant} < x$
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_C_Lt_X {
         /// A human-readable description of the object used for debug purposes.
@@ -2130,7 +2224,7 @@ This value must be greater than or equal to the threshold.*/
         pub opspace: Box<Poset>,
         pub value: Box<Value>,
     }
-    /// Tests v1 LEQ v2.
+    /// Tests $x_1 \leq_P x_2$
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_Leq {
         /// A human-readable description of the object used for debug purposes.
@@ -2523,7 +2617,7 @@ This value must be greater than or equal to the threshold.*/
         /// Describes the range of indices to take.
         pub range: Box<Range>,
     }
-    /// Threshold map (r-to-f for DP\_FuncNotMoreThan)
+    /// Threshold map (r-to-f for DP_FuncNotMoreThan)
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_Threshold1 {
         /// A human-readable description of the object used for debug purposes.
@@ -2538,7 +2632,7 @@ This value must be greater than or equal to the threshold.*/
         pub dom: Box<Poset>,
         pub value: Box<Value>,
     }
-    /// Threshold map (f-to-r for DP\_ResNotLessThan)
+    /// Threshold map (f-to-r for DP_ResNotLessThan)
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_Threshold2 {
         /// A human-readable description of the object used for debug purposes.
@@ -2609,7 +2703,7 @@ This value must be greater than or equal to the threshold.*/
         /// Domain of the monotone map
         pub dom: Box<Poset>,
     }
-    /// Tests value LEQ constant.
+    /// Tests $x \leq \text{constant}$
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_X_Leq_C {
         /// A human-readable description of the object used for debug purposes.
@@ -2627,7 +2721,7 @@ This value must be greater than or equal to the threshold.*/
         /// Comparison value.
         pub value: Box<Value>,
     }
-    /// Tests value LT constant.
+    /// Tests $x < \text{constant}$
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_X_Lt_C {
         /// A human-readable description of the object used for debug purposes.
@@ -2677,96 +2771,174 @@ This value must be greater than or equal to the threshold.*/
     pub struct ModelRequirement {
         pub requirement: String,
     }
+    /// Monotone maps
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum MonotoneMap {
+        /// Addition in the L topology.
         M_AddL(M_AddL),
+        /// Add a constant in the L topology.
         M_AddLConstant(M_AddLConstant),
+        /// Addition in the U topology.
         M_AddU(M_AddU),
+        /// Addition of constant in the U topology.
         M_AddUConstant(M_AddUConstant),
+        /// Maps top to top, and everything else to bottom.
         M_BottomIfNotTop(M_BottomIfNotTop),
+        /// Coproduct of monotone maps
         M_C_Coproduct(M_C_Coproduct),
+        /// Smash coproduct of two monotone maps
         M_C_CoproductSmash(M_C_CoproductSmash),
+        /// A monotone map from a product of domains to a smash product of codomains.
         M_C_DomProdCodSmash(M_C_DomProdCodSmash),
+        /// A monotone map from the smash product of domains to athe product of codomains.
         M_C_DomSmashCodProd(M_C_DomSmashCodProd),
+        /// Domain union of monotone maps
         M_C_DomUnion(M_C_DomUnion),
+        /// Tests constant LEQ value.
         M_C_Leq_X(M_C_Leq_X),
+        /// Lift of a monotone map to subsets
         M_C_LiftToSubsets(M_C_LiftToSubsets),
+        /// Tests constant LT value.
         M_C_Lt_X(M_C_Lt_X),
+        /// Opposite of a map
         M_C_Op(M_C_Op),
+        /// Monoidal product of monotone maps
         M_C_Parallel(M_C_Parallel),
+        /// Monoidal (smash) product of monotone maps
         M_C_ParallelSmash(M_C_ParallelSmash),
+        /// Product of monotone maps
         M_C_Product(M_C_Product),
+        /// Smash product of monotone maps
         M_C_ProductSmash(M_C_ProductSmash),
+        /// A refinement of the domain of a monotone map
         M_C_RefineDomain(M_C_RefineDomain),
+        /// Series composition of monotone maps
         M_C_Series(M_C_Series),
+        /// Sum of monotone maps
         M_C_Sum(M_C_Sum),
+        /// Smash sum of monotone maps
         M_C_SumSmash(M_C_SumSmash),
+        /// Wraps a monotone map with units descriptions for domain and codomain.
         M_C_WrapUnits(M_C_WrapUnits),
+        /// Ceiling function relative
         M_Ceil0(M_Ceil0),
+        /// Coerces from one poset to another
         M_Coerce(M_Coerce),
+        /// A constant function
         M_Constant(M_Constant),
+        /// Test for containment in a lower set
         M_ContainedInLowerSet(M_ContainedInLowerSet),
+        /// Test for containment in an upper set
         M_ContainedInUpperSet(M_ContainedInUpperSet),
+        /// Division by a constant (L topology)
         M_DivideLConstant(M_DivideLConstant),
+        /// Division by a constant (U topology)
         M_DivideUConstant(M_DivideUConstant),
+        /// The unique map from the empty set to another
         M_Empty(M_Empty),
+        /// A map defined pointwise.
         M_Explicit(M_Explicit),
+        /// Floor function relative
         M_Floor0(M_Floor0),
+        /// Identity map
         M_Id(M_Id),
+        /// A monotone map that outputs a constant value if the input is above a threshold.
         M_IdentityBelowThreshold(M_IdentityBelowThreshold),
+        /// Injection into a poset sum
         M_Injection(M_Injection),
+        /// Join operation
         M_Join(M_Join),
+        /// Join with a constant value
         M_JoinConstant(M_JoinConstant),
+        /// Tests v1 LEQ v2.
         M_Leq(M_Leq),
+        /// Lifts a value to a tuple with one element.
         M_Lift(M_Lift),
+        /// Lifts a monotone map to lower sets
         M_LiftToLowerSets(M_LiftToLowerSets),
+        /// Lifts a monotone map to upper sets
         M_LiftToUpperSets(M_LiftToUpperSets),
+        /// Meet operation
         M_Meet(M_Meet),
+        /// Meet with a constant
         M_MeetConstant(M_MeetConstant),
+        /// Multiplication (L topology)
         M_MultiplyL(M_MultiplyL),
+        /// Multiplication by a constant (L topology)
         M_MultiplyLConstant(M_MultiplyLConstant),
+        /// Multiplication (U topology)
         M_MultiplyU(M_MultiplyU),
+        /// Multiplication by a constant (U topology)
         M_MultiplyUConstant(M_MultiplyUConstant),
+        /// Lift to the power of a fraction (L topology)
         M_PowerFracL(M_PowerFracL),
+        /// Lift to the power of a fraction (U topology)
         M_PowerFracU(M_PowerFracU),
         M_ReprLowerSet(M_ReprLowerSet),
+        /// Maps a point to the largest upper set containing its closure
         M_ReprUpperSet(M_ReprUpperSet),
+        /// Largest principal lower set in the poset.
         M_RepresentPrincipalLowerSet_TotalOrderBounded(
             M_RepresentPrincipalLowerSet_TotalOrderBounded,
         ),
+        /// Largest principal upper set in the poset.
         M_RepresentPrincipalUpperSet_TotalOrderBounded(
             M_RepresentPrincipalUpperSet_TotalOrderBounded,
         ),
+        /// Round down
         M_RoundDown(M_RoundDown),
+        /// Round up
         M_RoundUp(M_RoundUp),
+        /// Scaling in the U topology by a fraction.
         M_ScaleL(M_ScaleL),
+        /// Scaling in the U topology by a fraction.
         M_ScaleU(M_ScaleU),
+        /// Injection into a smash sum
         M_SmashInjection(M_SmashInjection),
+        /// Subtraction of a constant (L topology)
         M_SubLConstant(M_SubLConstant),
+        /// Subtraction by a constant (U topology)
         M_SubUConstant(M_SubUConstant),
+        /// Projection of an element in a poset product.
         M_TakeIndex(M_TakeIndex),
+        /// Projection of a range of elements in a smash poset product.
         M_TakeRange(M_TakeRange),
+        /// Threshold map (r-to-f for DP\_FuncNotMoreThan)
         M_Threshold1(M_Threshold1),
+        /// Threshold map (f-to-r for DP\_ResNotLessThan)
         M_Threshold2(M_Threshold2),
+        /// Maps bottom to bottom, and everything else to top.
         M_TopIfNotBottom(M_TopIfNotBottom),
+        /// Undefined map
         M_Undefined(M_Undefined),
+        /// Placeholder for an unknown map
         M_Unknown(M_Unknown),
+        /// Unlifts a one-element tuple to its single element.
         M_Unlift(M_Unlift),
+        /// Tests value LEQ constant.
         M_X_Leq_C(M_X_Leq_C),
+        /// Tests value LT constant.
         M_X_Lt_C(M_X_Lt_C),
     }
+    /// Named DPs represent a graph of DPs with named nodes and node ports.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum NDP {
+        /// Graph of NDPs with connections between them.
         NDP_Composite(NDP_Composite),
+        /// An NDP that contains a single DP.
         NDP_Simple(NDP_Simple),
+        /// sum of NDPs
         NDP_Sum(NDP_Sum),
+        /// A special NDP to indicate a template hole in the NDP.
         NDP_TemplateHole(NDP_TemplateHole),
     }
+    /// The interface of a named DP.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum NDPInterface {
+        /// The interface of a named DP, given by two dictionaries for functionalities and resources.
         NDPInterface_Explicit(NDPInterface_Explicit),
     }
     /// The interface of a named DP, given by two dictionaries for functionalities and resources.
@@ -2785,9 +2957,11 @@ This value must be greater than or equal to the threshold.*/
         /// Dictionary from requirement name to poset.
         pub rs: std::collections::HashMap<String, Box<Poset>>,
     }
+    /// A template for an NDP.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum NDPTemplate {
+        /// A template described by a graph with holes.
         NDPTemplate_Simple(NDPTemplate_Simple),
     }
     /// A template described by a graph with holes.
@@ -3365,37 +3539,67 @@ Current supported values are f32 and f64.*/
         /// Pointer to the entity that generated this object.
         pub address: Option<Box<Address>>,
     }
+    /// A poset.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum Poset {
+        /// The poset of boolean values
         P_Bool(P_Bool),
+        /// Arrow constructors for posets.
         P_C_Arrow(P_C_Arrow),
+        /// Discretized version of a poset.
         P_C_Discretized(P_C_Discretized),
+        /// Lexicographic product of posets
         P_C_Lexicographic(P_C_Lexicographic),
+        /// The poset of lower sets of a given poset.
         P_C_LowerSets(P_C_LowerSets),
+        /// Poset of multisets
         P_C_Multisets(P_C_Multisets),
+        /// Opposite of a poset
         P_C_Opposite(P_C_Opposite),
+        /// Power poset of a given poset.
         P_C_Power(P_C_Power),
+        /// Cartesian product of posets
         P_C_Product(P_C_Product),
+        /// A product of posets where the elements are dictionaries.
         P_C_ProductDS(P_C_ProductDS),
+        /// Poset smash product
         P_C_ProductSmash(P_C_ProductSmash),
+        /// Direct sum of posets.
         P_C_Sum(P_C_Sum),
+        /// Direct (smash) sum of posets
         P_C_SumSmash(P_C_SumSmash),
+        /// Twisted arrow construction of a poset.
         P_C_Twisted(P_C_Twisted),
+        /// A poset with units
         P_C_Units(P_C_Units),
+        /// The poset of upper sets of a given poset.
         P_C_UpperSets(P_C_UpperSets),
+        /// Decimal numbers with fixed precision.
         P_Decimal(P_Decimal),
+        /// A subposet that allows to sample a numeric poset.
         P_F_Bounded(P_F_Bounded),
+        /// Intersection of posets.
         P_F_C_Intersection(P_F_C_Intersection),
+        /// Union of posets
         P_F_C_Union(P_F_C_Union),
+        /// An interval in a poset.
         P_F_Interval(P_F_Interval),
+        /// Lower closure in a poset.
         P_F_LowerClosure(P_F_LowerClosure),
+        /// A finite subposet of an ambient poset.
         P_F_Subposet(P_F_Subposet),
+        /// Upper closure in a poset.
         P_F_UpperClosure(P_F_UpperClosure),
+        /// Arbitrary finite poset
         P_Finite(P_Finite),
+        /// Poset of floating point numbers.
         P_Float(P_Float),
+        /// Fractions with a maximum absolute value for numerator and denominator.
         P_Fractions(P_Fractions),
+        /// Poset of integers.
         P_Integer(P_Integer),
+        /// Placeholder for an unknown poset
         P_Unknown(P_Unknown),
     }
     /// Projection from a product.
@@ -3408,15 +3612,20 @@ Current supported values are f32 and f64.*/
         /// Type marker
         pub r#type: String,
     }
+    /// Queries
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum Query {
+        /// Single query
         Query_Single(Query_Single),
     }
+    /// Query data
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum QueryData {
+        /// Data for the query `FixFunMinReq`
         QueryFixFunMinReqData(QueryFixFunMinReqData),
+        /// Data for the query `FixReqMaxFun`
         QueryFixReqMaxFunData(QueryFixReqMaxFunData),
     }
     /// Data for the query `FixFunMinReq`
@@ -3459,25 +3668,45 @@ Current supported values are f32 and f64.*/
         /// Type marker
         pub r#type: String,
     }
+    /** Top-level object types for what can be serialized in a file.
+
+ The Root schema contains as subtypes all kinds of objects that can serialized in a MCDP file during an export operation.*/
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "kind")]
     pub enum Root {
+        /// Checks for the maps, as used in test cases.
         Check(Check),
+        /// Design problem with implementations (DPI)
         DP(DP),
+        /// Map to lower sets of functionalities.
         L1Map(L1Map),
+        /// Map to lower sets of functionalities and implementations.
         LMap(LMap),
+        /// Monotone maps
         MonotoneMap(MonotoneMap),
+        /// Named DPs represent a graph of DPs with named nodes and node ports.
         NDP(NDP),
+        /// The interface of a named DP.
         NDPInterface(NDPInterface),
+        /// A template for an NDP.
         NDPTemplate(NDPTemplate),
+        /// A poset.
         Poset(Poset),
+        /// Queries
         Query(Query),
+        /// Scalable map to lower sets of functionalities.
         SL1Map(SL1Map),
+        /// Scalable map to lower sets of functionalities and implementations.
         SLMap(SLMap),
+        /// Scalable map to upper sets of resources.
         SU1Map(SU1Map),
+        /// Scalable map to upper sets of resources and implementations.
         SUMap(SUMap),
+        /// Map to upper sets of resources.
         U1Map(U1Map),
+        /// Map to upper sets of resources and implementations.
         UMap(UMap),
+        /// A typed value
         Value(Value),
     }
     /// Check for a SL1Map.
@@ -3494,7 +3723,7 @@ Current supported values are f32 and f64.*/
         /// The map to check
         pub m: Box<SL1Map>,
     }
-    /// An input-output pair for the SL1Map
+    /// An input-output pair
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct SL1Check_Data {
         pub opt: AnyValue,
@@ -3507,25 +3736,43 @@ Current supported values are f32 and f64.*/
         pub pess_y: Box<LowerSet>,
         pub x: AnyValue,
     }
+    /// Scalable map to lower sets of functionalities.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum SL1Map {
+        /// Sum of maps
         SL1_C_CodSum(SL1_C_CodSum),
+        /// Smash sum
         SL1_C_CodSumSmash(SL1_C_CodSumSmash),
+        /// Constructs a SL1Map from explicit approximations of L1Map maps.
         SL1_C_ExplicitApprox(SL1_C_ExplicitApprox),
+        /// Intersection of SL1 maps
         SL1_C_Intersection(SL1_C_Intersection),
+        /// Monoidal product
         SL1_C_Parallel(SL1_C_Parallel),
+        /// Product of domains, intersection of codomains
         SL1_C_ProdIntersection(SL1_C_ProdIntersection),
+        /// Product of SL1 maps
         SL1_C_Product(SL1_C_Product),
+        /// Refinement of the domain
         SL1_C_RefineDomain(SL1_C_RefineDomain),
+        /// Series composition
         SL1_C_Series(SL1_C_Series),
+        /// Trace
         SL1_C_Trace(SL1_C_Trace),
+        /// Union of SL1 maps
         SL1_C_Union(SL1_C_Union),
+        /// Decorates a map with units for the domain and codomain.
         SL1_C_WrapUnits(SL1_C_WrapUnits),
+        /// Lifts a L1Map to a SL1Map.
         SL1_Exact(SL1_Exact),
+        /// Identity
         SL1_Identity(SL1_Identity),
+        /// The lower inverse of multiplication.
         SL1_InvMultiply(SL1_InvMultiply),
+        /// The lower inverse of addition.
         SL1_InvSum(SL1_InvSum),
+        /// Placeholder for an unknown SL1Map
         SL1_Unknown(SL1_Unknown),
     }
     /// Sum of maps
@@ -3838,22 +4085,37 @@ Current supported values are f32 and f64.*/
         pub pess_y: Box<LowerSet>,
         pub x: AnyValue,
     }
+    /// Scalable map to lower sets of functionalities and implementations.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum SLMap {
+        /// Transforms the implementations of a SLMap.
         SL_C_ITransform(SL_C_ITransform),
+        /// Intersection of the results of a set of maps.
         SL_C_Intersection(SL_C_Intersection),
+        /// Monoidal product
         SL_C_Parallel(SL_C_Parallel),
+        /// Refines the domain of another SLMap
         SL_C_RefineDomain(SL_C_RefineDomain),
+        /// Series composition
         SL_C_Series(SL_C_Series),
+        /// Trace of a SLMap.
         SL_C_Trace(SL_C_Trace),
+        /// Composition of SLMaps using the union of the results.
         SL_C_Union(SL_C_Union),
+        /// Decorates with units another SLMap.
         SL_C_WrapUnits(SL_C_WrapUnits),
+        /// Identity
         SL_Identity(SL_Identity),
+        /// Lifts a LMap to a SLMap.
         SL_L_Exact(SL_L_Exact),
+        /// Construct a SLMap from explicit optimistic and pessimistic approximations.
         SL_L_Explicit_Approx(SL_L_Explicit_Approx),
+        /// Lifts a SL1Map to SLMap with a constant implementation.
         SL_L_Lift1_Constant(SL_L_Lift1_Constant),
+        /// Lifts a SL1Map to SLMap by generating the implementations.
         SL_L_Lift1_Transform(SL_L_Lift1_Transform),
+        /// Placeholder for unknown SLMap
         SL_Unknown(SL_Unknown),
     }
     /// Transforms the implementations of a SLMap.
@@ -4209,25 +4471,43 @@ Current supported values are f32 and f64.*/
         pub pess_y: Box<UpperSet>,
         pub x: AnyValue,
     }
+    /// Scalable map to upper sets of resources.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum SU1Map {
+        /// Sum of maps
         SU1_C_CodSum(SU1_C_CodSum),
+        /// Smash sum
         SU1_C_CodSumSmash(SU1_C_CodSumSmash),
+        /// Constructs a SU1Map from explicit approximations of U1Map maps.
         SU1_C_ExplicitApprox(SU1_C_ExplicitApprox),
+        /// Intersection of SU1 maps
         SU1_C_Intersection(SU1_C_Intersection),
+        /// Monoidal product
         SU1_C_Parallel(SU1_C_Parallel),
+        /// Product of domains, intersection of codomains
         SU1_C_ProdIntersection(SU1_C_ProdIntersection),
+        /// Product of SU1 maps
         SU1_C_Product(SU1_C_Product),
+        /// Refinement of the domain
         SU1_C_RefineDomain(SU1_C_RefineDomain),
+        /// Series composition
         SU1_C_Series(SU1_C_Series),
+        /// Trace
         SU1_C_Trace(SU1_C_Trace),
+        /// Union of SU1 maps
         SU1_C_Union(SU1_C_Union),
+        /// Wraps a map with units.
         SU1_C_WrapUnits(SU1_C_WrapUnits),
+        /// Lifts a U1Map to a SU1Map.
         SU1_Exact(SU1_Exact),
+        /// Identity
         SU1_Identity(SU1_Identity),
+        /// The upper inverse of multiplication.
         SU1_InvMultiply(SU1_InvMultiply),
+        /// The inverse of addition.
         SU1_InvSum(SU1_InvSum),
+        /// Placeholder for an unknown SU1Map
         SU1_Unknown(SU1_Unknown),
     }
     /// Sum of maps
@@ -4540,22 +4820,37 @@ Current supported values are f32 and f64.*/
         pub pess_y: Box<UpperSet>,
         pub x: AnyValue,
     }
+    /// Scalable map to upper sets of resources and implementations.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum SUMap {
+        /// Transforms the implementations of a SUMap.
         SU_C_ITransform(SU_C_ITransform),
+        /// Intersection of the results of a set of maps.
         SU_C_Intersection(SU_C_Intersection),
+        /// Monoidal product
         SU_C_Parallel(SU_C_Parallel),
+        /// Refines the domain of another SUMap
         SU_C_RefineDomain(SU_C_RefineDomain),
+        /// Series composition
         SU_C_Series(SU_C_Series),
+        /// Trace of a SUMap.
         SU_C_Trace(SU_C_Trace),
+        /// Composition of SUMaps using the union of the results.
         SU_C_Union(SU_C_Union),
+        /// Decorates with units another SUMap.
         SU_C_WrapUnits(SU_C_WrapUnits),
+        /// Identity
         SU_Identity(SU_Identity),
+        /// Lifts a UMap to a SUMap.
         SU_L_Exact(SU_L_Exact),
+        /// Construct a SUMap from explicit optimistic and pessimistic approximations.
         SU_L_Explicit_Approx(SU_L_Explicit_Approx),
+        /// Lifts a SU1Map to SUMap with a constant implementation.
         SU_L_Lift1_Constant(SU_L_Lift1_Constant),
+        /// Lifts a SU1Map to SUMap by generating the implementations.
         SU_L_Lift1_Transform(SU_L_Lift1_Transform),
+        /// Placeholder for unknown SUMap
         SU_Unknown(SU_Unknown),
     }
     /// Transforms the implementations of a SUMap.
@@ -4902,38 +5197,67 @@ Current supported values are f32 and f64.*/
         pub x: AnyValue,
         pub y: Box<UpperSet>,
     }
+    /// Map to upper sets of resources.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum U1Map {
+        /// Co-domain sum combination
         U1_C_CodSum(U1_C_CodSum),
+        /// Co-domain (smash) sum combination
         U1_C_CodSumSmash(U1_C_CodSumSmash),
+        /// Domain union
         U1_C_DomUnion(U1_C_DomUnion),
+        /// Intersection
         U1_C_Intersection(U1_C_Intersection),
+        /// Monoidal product
         U1_C_Parallel(U1_C_Parallel),
+        /// From product to intersection
         U1_C_ProdIntersection(U1_C_ProdIntersection),
+        /// Product
         U1_C_Product(U1_C_Product),
+        /// Refines the domain of a monotone map.
         U1_C_RefineDomain(U1_C_RefineDomain),
+        /// Series composition
         U1_C_Series(U1_C_Series),
+        /// Trace
         U1_C_Trace(U1_C_Trace),
+        /// Union
         U1_C_Union(U1_C_Union),
+        /// Decorates a map with units.
         U1_C_WrapUnits(U1_C_WrapUnits),
+        /// Map induced by a catalog of options.
         U1_Catalog(U1_Catalog),
+        /// Constant map
         U1_Constant(U1_Constant),
+        /// Returns the entire poset
         U1_Entire(U1_Entire),
+        /// Map defined pointwise
         U1_Explicit(U1_Explicit),
+        /// Filters based on a monotone map.
         U1_FromFilter(U1_FromFilter),
+        /// Lift of the identity map
         U1_Identity(U1_Identity),
+        /// Intersection of principal upper sets.
         U1_IntersectionOfPrinUpperSets(U1_IntersectionOfPrinUpperSets),
+        /// Finite-resolution optimistic approximation of the inverse of a multiplication map.
         U1_InvMul_Opt(U1_InvMul_Opt),
+        /// Finite-resolution pessimistic approximation of the inverse of a multiplication map.
         U1_InvMul_Pes(U1_InvMul_Pes),
+        /// Finite-resolution optimistic approximation of the inverse of an addition map.
         U1_InvSum_Opt(U1_InvSum_Opt),
+        /// Finite-resolution pessimistic approximation of the inverse of an addition map.
         U1_InvSum_Pes(U1_InvSum_Pes),
+        /// Computes the upper inverse of a monotone map.
         U1_L_Uinv(U1_L_Uinv),
+        /// Lifts a monotone map
         U1_Lift(U1_Lift),
+        /// Represent a principal upper set
         U1_RepresentPrincipalUpperSet(U1_RepresentPrincipalUpperSet),
         U1_Uinv_Join(U1_Uinv_Join),
         U1_Uinv_JoinConstant(U1_Uinv_JoinConstant),
+        /// Union of principal upper sets.
         U1_UnionOfPrinUpperSets(U1_UnionOfPrinUpperSets),
+        /// Placeholder for an unknown map.
         U1_Unknown(U1_Unknown),
     }
     /// Co-domain sum combination
@@ -5127,6 +5451,7 @@ Current supported values are f32 and f64.*/
         pub kdom: Box<Poset>,
         pub options: Vec<Box<U1_Catalog_Options>>,
     }
+    /// An option in the catalog
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct U1_Catalog_Options {
         pub f: AnyValue,
@@ -5385,22 +5710,37 @@ Current supported values are f32 and f64.*/
         pub x: AnyValue,
         pub y: Box<UpperSet>,
     }
+    /// Map to upper sets of resources and implementations.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum UMap {
+        /// Transforms the implementation of another map.
         U_C_ITransform(U_C_ITransform),
+        /// Intersection of maps
         U_C_Intersection(U_C_Intersection),
+        /// Monoidal product
         U_C_Parallel(U_C_Parallel),
+        /// Refines the domain of a monotone map
         U_C_RefineDomain(U_C_RefineDomain),
+        /// Series composition
         U_C_Series(U_C_Series),
+        /// Trace
         U_C_Trace(U_C_Trace),
+        /// Union of maps
         U_C_Union(U_C_Union),
+        /// Decorates a map with units.
         U_C_WrapUnits(U_C_WrapUnits),
+        /// UMap for a catalog
         U_Catalog(U_Catalog),
+        /// Constant map
         U_Constant(U_Constant),
+        /// Identity
         U_Identity(U_Identity),
+        /// Lifts a U1Map morphism with a constant value for the implementation.
         U_L_Lift1_Constant(U_L_Lift1_Constant),
+        /// Lifts a U1Map morphism with a function to compute the implementation.
         U_L_Lift1_Transform(U_L_Lift1_Transform),
+        /// Placeholder for an unknown map
         U_Unknown(U_Unknown),
     }
     /// Transforms the implementation of another map.
@@ -5625,12 +5965,17 @@ Current supported values are f32 and f64.*/
         pub kdom: Box<Poset>,
         pub kimp: Box<Poset>,
     }
+    /// Units specifications
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum Unit {
+        /// Represents the absence of units.
         Unit_None(Unit_None),
+        /// A simple unit.
         Unit_Single(Unit_Single),
+        /// A vector of units for a product of posets.
         Unit_Vector(Unit_Vector),
+        /// A special type of unit that is used to describe the units of composite types.
         Unit_Wrapped(Unit_Wrapped),
     }
     /// Represents the absence of units.
@@ -5674,10 +6019,13 @@ Current supported values are f32 and f64.*/
         pub name: String,
         pub shape: AnyValue,
     }
+    /// Upper sets
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum UpperSet {
+        /// Unused
         UpperSet_Unused(UpperSet_Unused),
+        /// An upper set defined as the up closure of a finite set of points.
         UpperSet_UpperClosure(UpperSet_UpperClosure),
     }
     /// Unused
@@ -5708,9 +6056,11 @@ Current supported values are f32 and f64.*/
         pub poset: Box<Poset>,
         pub value: AnyValue,
     }
+    /// A typed value
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type")]
     pub enum Value {
+        /// A (poset, value) pair.
         VU(VU),
     }
 }

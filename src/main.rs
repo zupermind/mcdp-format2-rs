@@ -2,9 +2,9 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use glob::Pattern;
-use mcdp_format2_rs::list_paths;
 use mcdp_format2_rs::Config;
 use mcdp_format2_rs::Root;
+use mcdp_format2_rs::list_paths;
 use std::path::PathBuf;
 
 #[derive(Parser)]
