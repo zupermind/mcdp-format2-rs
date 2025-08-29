@@ -2,7 +2,7 @@
 openapi: "3.1.1"
 info:
   title: "MCDP Format 2 schema"
-  version: "2.18.0"
+  version: "2.19.1"
   license:
     name: "Apache-2.0"
     url: "https://www.apache.org/licenses/LICENSE-2.0.html"

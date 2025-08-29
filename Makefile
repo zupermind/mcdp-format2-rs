@@ -24,3 +24,5 @@ generate:
 		--target src/types.rs
 
 	cp ${the_schema} mcdp2-openapi-schema.yaml
+
+	echo "You need to update the version in Cargo.toml"
