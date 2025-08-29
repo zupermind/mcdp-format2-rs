@@ -2,7 +2,7 @@
 openapi: "3.1.1"
 info:
   title: "MCDP Format 2 schema"
-  version: "2.17.0"
+  version: "2.18.0"
   license:
     name: "Apache-2.0"
     url: "https://www.apache.org/licenses/LICENSE-2.0.html"
@@ -90,6 +90,106 @@ components:
             SUCheck: "#/components/schemas/SUCheck"
             U1Check: "#/components/schemas/U1Check"
             UCheck: "#/components/schemas/UCheck"
+    ComputeJob:
+      allOf:
+      - $ref: "#/components/schemas/Root"
+      - description: |
+          Computation jobs 
+        properties:
+          address:
+            $ref: "#/components/schemas/Address"
+          axes:
+            type: "object"
+            additionalProperties:
+              type: "integer"
+            description: |
+              The names of the axes of the computation job.
+          points:
+            type: "array"
+            items:
+              $ref: "#/components/schemas/ComputePoint"
+          type:
+            type: "string"
+            enum:
+            - "ComputeJob_F_to_R"
+            - "ComputeJob_R_to_F"
+            description: "Discriminator variable to distinguish subtypes."
+          kind:
+            type: "string"
+            const: "ComputeJob"
+            enum:
+            - "ComputeJob"
+            default: "ComputeJob"
+        x-latex-schema:
+          top_level: false
+          excluded: true
+        type: "object"
+        required:
+        - "type"
+        - "kind"
+        discriminator:
+          propertyName: "type"
+          mapping:
+            ComputeJob_F_to_R: "#/components/schemas/ComputeJob_F_to_R"
+            ComputeJob_R_to_F: "#/components/schemas/ComputeJob_R_to_F"
+    ComputeJob_F_to_R:
+      allOf:
+      - $ref: "#/components/schemas/ComputeJob"
+      - properties:
+          f_r:
+            $ref: "#/components/schemas/SU1Map"
+          f_b_r:
+            $ref: "#/components/schemas/SUMap"
+          f_i_r:
+            $ref: "#/components/schemas/SUMap"
+          type:
+            type: "string"
+            const: "ComputeJob_F_to_R"
+            enum:
+            - "ComputeJob_F_to_R"
+            default: "ComputeJob_F_to_R"
+        type: "object"
+        description: "F to R query"
+        required:
+        - "f_b_r"
+        - "f_i_r"
+        - "f_r"
+        - "type"
+    ComputeJob_R_to_F:
+      allOf:
+      - $ref: "#/components/schemas/ComputeJob"
+      - properties:
+          r_f:
+            $ref: "#/components/schemas/SL1Map"
+          r_b_f:
+            $ref: "#/components/schemas/SLMap"
+          r_i_f:
+            $ref: "#/components/schemas/SLMap"
+          type:
+            type: "string"
+            const: "ComputeJob_R_to_F"
+            enum:
+            - "ComputeJob_R_to_F"
+            default: "ComputeJob_R_to_F"
+        type: "object"
+        description: "F to R query"
+        required:
+        - "r_b_f"
+        - "r_f"
+        - "r_i_f"
+        - "type"
+    ComputePoint:
+      type: "object"
+      properties:
+        key:
+          type: "string"
+          description: |
+            Key of the point, to be referenced later.
+        value:
+          description: "Value of the point"
+      x-latex-schema:
+        top_level: false
+        excluded: true
     Connection:
       title: "Represents a connection between two nodes in the NDP graph"
       type: "object"
@@ -1598,18 +1698,6 @@ components:
             \definecolor{color-upper}{RGB}{12,12,179}
 
             \newcommand{\signLOMap}[3]{#1 \stackrel{#3}{\to}_{\text{\textbf{L1Map}}} #2 }
-          description: |
-            A SELF is a map of the form
-            %
-            \begin{align*}
-                m: \lkdom \toinpos P\_C\_LowerSets ( \lkcod )
-            \end{align*}
-
-            We use the notation:
-            %
-            \begin{align*}
-                m: \signLOMap{\lkdom}{\lkcod}{\lkimp}
-            \end{align*}
         type: "object"
         discriminator:
           propertyName: "type"
@@ -1652,7 +1740,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1701,7 +1789,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1750,7 +1838,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1808,7 +1896,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1852,7 +1940,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1895,7 +1983,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -1940,7 +2028,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -2013,7 +2101,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -2081,7 +2169,7 @@ components:
             items:
               $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: |
                 Maps to be composed.
           labels:
@@ -2167,7 +2255,7 @@ components:
               $ref: "#/components/schemas/L1_Catalog_Options"
             x-latex-property:
               symbol: |
-                \langle f_i, r_i \rangle
+                \tup \fun_\idx, \rescj_\idx \rangle
               description: |
                 The options in the catalog
           type:
@@ -2181,12 +2269,15 @@ components:
         x-latex-schema:
           group: "10_simple"
           description: |
-            This map is defined by a catalog of options $\{\langle f_i,r_i \rangle \}$:
+            This map is defined by a catalog of options $\makelist{\tup{\fun_\idx,\rescj_\idx}}$:
             %
             \begin{equation}
-                x \mapsto  \bigcup_i\ \{ \downarrow f_i \mid x \leq r_i \}
+                x \mapsto  \bigcup_\idx \{ \downit \fun_\idx \mid x \leq \rescj_\idx \}
             \end{equation}
           order: 100
+          preamble: |-
+            \newcommand{\downit}{\downarrow}
+            \newcommand{\upit}{\uparrow}
         required:
         - "options"
         - "type"
@@ -2196,12 +2287,12 @@ components:
       properties:
         f:
           x-latex-property:
-            symbol: "f"
+            symbol: "\\fun"
             description: |
               A functionality
         r:
           x-latex-property:
-            symbol: "r"
+            symbol: "\\rescj"
             description: |
               A resource
       required:
@@ -2311,7 +2402,7 @@ components:
             x-latex-property:
               symbol: "m"
               description: |
-                A monotone map $m : \lkdom \to \Bool$
+                A monotone map $m : \lkdom \toinpos \Bool$
           type:
             type: "string"
             const: "L1_FromFilter"
@@ -2383,7 +2474,7 @@ components:
             This map is defined as follows:
             %
             \begin{equation}
-                \langle x_i \rangle_i \mapsto \bigcap_i \downarrow x_i
+                \langle x_i \rangle_i \mapsto \bigcap_i \downit x_i
             \end{equation}
         required:
         - "type"
@@ -2604,35 +2695,6 @@ components:
           group: "15_poset_ops"
           description: |
             This map is defined when $\lkdom$ and $\lkcod$ are subsets of a common ambient poset $P$.
-
-            It is defined as:
-            %
-            \begin{equation*}
-                x \mapsto \max \{ S \in P\_C\_LowerSets(\lkcod) \mid S \subseteq \quad \downarrow_P x \}
-            \end{equation*}
-
-            The idea is that we want to ``represent'' the principal lower set $\downarrow_P x$ in terms of the codomain $\lkcod$.
-
-            For example, consider the case
-            % 
-            \begin{itemize}
-                \item $\lkdom = 2\mathbb{Z}$, the even integers
-                \item $\lkcod = 3\mathbb{Z}$, the multiples of 3  
-            \end{itemize} 
-
-            They are both subposets of the ambient poset $\mathbb{Z}$.
-            The map would associate each even integer $x$ with the down closure of the largest multiple of 3  less than or equal to $x$:
-            %
-            \begin{align*}
-                10 &\mapsto \downarrow 9 \\
-                8 &\mapsto \downarrow 6 \\
-                6 &\mapsto \downarrow 6 \\
-                4 &\mapsto \downarrow 3 \\
-                2 &\mapsto \downarrow 0 \\
-                0 &\mapsto \downarrow 0 
-            \end{align*}
-
-            In general, the posets are not total orders, so the result is not necessarily a principal lower set.
         required:
         - "type"
     L1_TopAlternating:
@@ -2683,7 +2745,7 @@ components:
             This map is defined as follows:
             %
             \begin{equation}
-                \langle x_i \rangle_i \mapsto \bigcup_i \downarrow x_i
+                \langle x_i \rangle_i \mapsto \bigcup_i \downit x_i
             \end{equation}
         required:
         - "type"
@@ -2816,17 +2878,6 @@ components:
           color: "color-lower"
           preamble: |
             \newcommand{\signLMAP}[3]{#1 \stackrel{#3}{\to}_{\text{\textbf{LMAP}}} #2 }
-          description: |
-            A SELF is a map of the form
-            %
-            \begin{align*}
-                m: \lkdom \toinpos P\_C\_LowerSets (   P\_C\_Lexicographic (\lkcod, \lkimp) ) 
-            \end{align*}
-
-            We use the notation:
-            \begin{align*}
-                m: \signLMAP{\lkdom}{\lkcod}{\lkimp}
-            \end{align*}
         type: "object"
         discriminator:
           propertyName: "type"
@@ -3144,9 +3195,15 @@ components:
       title: "Options for L_Catalog"
       type: "object"
       properties:
-        f: {}
-        r: {}
-        i: {}
+        f:
+          x-latex-property:
+            symbol: "\\fun"
+        r:
+          x-latex-property:
+            symbol: "\\rescj"
+        i:
+          x-latex-property:
+            symbol: "\\imp"
       required:
       - "f"
       - "r"
@@ -3213,17 +3270,6 @@ components:
         title: "Lifts a L1Map morphisms with a constant value for the implementation."
         x-latex-schema:
           group: "40_lift"
-          description: |
-            Given a L1Map morphism
-            % 
-            \begin{equation*}
-                m: \lkdom \to \lkcod
-            \end{equation*}
-            and a constant value $v$ for the implementation, we construct a new morphism
-            % 
-            \begin{align*}
-                SELF (m, v) & : \lkdom \to \lkcod [\lkimp]
-            \end{align*}
         required:
         - "m"
         - "type"
@@ -3235,7 +3281,7 @@ components:
           m:
             $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\lmor"
               description: |
                 A L1Map morphism.
           transform:
@@ -3254,22 +3300,6 @@ components:
         title: "Lifts a L1Map morphism with a function to compute the implementation."
         x-latex-schema:
           group: "40_lift"
-          description: |
-            Given a L1Map morphism
-            % 
-            \begin{equation*}
-                m: \lkdom \to \lkcod
-            \end{equation*}
-            and a monotone map
-            % 
-            \begin{equation*}
-                f: \lkcod \times \lkdom^{\op} \toinpos \lkimp
-            \end{equation*}
-            we construct a new morphism
-            % 
-            \begin{align*}
-                SELF (m, f) & : \lkdom \to \lkcod [\lkimp]
-            \end{align*}
         required:
         - "m"
         - "transform"
@@ -3633,8 +3663,7 @@ components:
           A monotone map from a product of domains to a smash product of codomains.
         x-latex-schema:
           group: "g31_multi"
-          description: |2
-
+          description: |
             For two monotone maps $f: A \to B$ and $g: C \to D$, we can define the monotone map
             %
             \begin{equation}
@@ -3678,7 +3707,7 @@ components:
             default: "M_C_DomSmashCodProd"
         type: "object"
         title: |
-          A monotone map from the smash product of domains to athe product of codomains.
+          A monotone map from the smash product of domains to the product of codomains.
         x-latex-schema:
           group: "g31_multi"
           description: |
@@ -4331,6 +4360,14 @@ components:
         x-latex-property:
           description: |
             The constant map $x \mapsto v$.
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_ContainedInLowerSet:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4483,6 +4520,14 @@ components:
           group: "g10_basic"
         required:
         - "type"
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_Explicit:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4507,6 +4552,14 @@ components:
         required:
         - "options"
         - "type"
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_Explicit_Option:
       type: "object"
       properties:
@@ -4566,6 +4619,14 @@ components:
           group: "g10_basic"
         required:
         - "type"
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_IdentityBelowThreshold:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4600,7 +4661,6 @@ components:
                     x & \text{otherwise}
                 \end{cases}
             \end{equation}
-
             where $T \leq V$.
         required:
         - "threshold"
@@ -4628,6 +4688,14 @@ components:
         required:
         - "index"
         - "type"
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_Join:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4658,6 +4726,14 @@ components:
         required:
         - "opspaces"
         - "type"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_JoinConstant:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4695,6 +4771,14 @@ components:
         - "opspace"
         - "type"
         - "value"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_Leq:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4825,6 +4909,14 @@ components:
         required:
         - "opspaces"
         - "type"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_MeetConstant:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -4862,6 +4954,14 @@ components:
         - "opspace"
         - "type"
         - "value"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_MultiplyL:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -5101,7 +5201,7 @@ components:
             takes a point $x$ in the domain and returns the largest upper set containing its closure.
 
             \begin{equation*}
-                    x \mapsto \arg\min_{y \geq x} \uparrow y
+                    x \mapsto \arg\min_{y \geq x} \upit y
             \end{equation*}
 
             If this point does not exist, the map is ``undefined''.
@@ -5129,7 +5229,7 @@ components:
             takes a point $x$ in the domain and returns the largest lower set containing its down closure.
             % 
             \begin{equation}
-                x \mapsto \arg\max_{y \leq x} \downarrow y
+                x \mapsto \arg\max_{y \leq x} \downit y
             \end{equation}  
             %
             The compilation process ensures that this map is constructed only when this is always well defined.
@@ -5137,6 +5237,14 @@ components:
             Example: $\dom = \mathbb{R}$ and $\cod = \mathbb{N}$
         required:
         - "type"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_RepresentPrincipalUpperSet_TotalOrderBounded:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -5156,7 +5264,7 @@ components:
             takes a point $x$ in the domain and returns the largest upper set containing its closure.
             %
             \begin{equation*}
-                    x \mapsto \arg\min_{y \geq x} \uparrow y
+                    x \mapsto \arg\min_{y \geq x} \upit y
             \end{equation*}
 
             The compilation process ensures that this map is constructed only when this is always well defined.
@@ -5164,6 +5272,14 @@ components:
             Example: $\dom = \mathbb{R}$ and $\cod = \mathbb{N}$
         required:
         - "type"
+        x-mcdp-map:
+          flavor:
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_RoundDown:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -5258,7 +5374,7 @@ components:
             - "M_ScaleL"
             default: "M_ScaleL"
         type: "object"
-        title: "Scaling in the U topology by a fraction."
+        title: "Scaling in the L topology by a fraction."
         x-latex-schema:
           group: "g50_maths"
           description: |
@@ -5328,6 +5444,14 @@ components:
         required:
         - "index"
         - "type"
+        x-mcdp-map:
+          flavor: "both"
+          functors:
+            dom:
+            cod:
+            uinv:
+            linv:
+            used:
     M_SubLConstant:
       allOf:
       - $ref: "#/components/schemas/MonotoneMap"
@@ -5484,17 +5608,7 @@ components:
         title: "Threshold map (f-to-r for DP\\_ResNotLessThan)"
         x-latex-schema:
           group: "g70_misc"
-          description: |
-            This map returns a constant value:
-            %
-            \begin{equation}
-                x\mapsto \begin{cases}
-                             x & \text{if } v \leq x \\
-                             v & \text{otherwise}
-                \end{cases}
-            \end{equation}
-
-            This map arises as the f-to-r map of DP\_ResNotLessThan.
+          description: ""
         required:
         - "type"
         - "value"
@@ -6455,7 +6569,7 @@ components:
           - - value:
               - "10"
               description: |
-                The lower set $\downarrow{10}$.
+                The lower set $\downit{10}$.
     P_C_Multisets:
       allOf:
       - $ref: "#/components/schemas/Poset"
@@ -7047,7 +7161,7 @@ components:
           - - value:
               - "10"
               description: |
-                The upper set $\uparrow{10}$.
+                The upper set $\upit{10}$.
     P_Decimal:
       allOf:
       - $ref: "#/components/schemas/Poset"
@@ -7986,6 +8100,9 @@ components:
         type: "object"
         title: "Data for the query `FixFunMinReq`"
         required:
+        - "f"
+        - "optimize_for"
+        - "r"
         - "type"
     QueryFixReqMaxFunData:
       allOf:
@@ -8025,6 +8142,9 @@ components:
         type: "object"
         title: "Data for the query `FixReqMaxFun`"
         required:
+        - "f"
+        - "optimize_for"
+        - "r"
         - "type"
     Query_Single:
       allOf:
@@ -8093,6 +8213,7 @@ components:
           type: "string"
           enum:
           - "Check"
+          - "ComputeJob"
           - "DP"
           - "L1Map"
           - "LMap"
@@ -8115,6 +8236,7 @@ components:
         propertyName: "kind"
         mapping:
           Check: "#/components/schemas/Check"
+          ComputeJob: "#/components/schemas/ComputeJob"
           DP: "#/components/schemas/DP"
           L1Map: "#/components/schemas/L1Map"
           LMap: "#/components/schemas/LMap"
@@ -8251,15 +8373,6 @@ components:
           top_level: true
           order: 70
           color: "color-lower"
-          description: |
-            A SELF is a pair of maps of the form
-            %
-            \begin{align*}
-                \mlopt: \opt^{\op} \toinpos (\lkdom \toinpos P\_C\_LowerSets (  \lkcod ) )) \\
-                \mlpes: \pes \toinpos (\lkdom \toinpos P\_C\_LowerSets (  \lkcod) ))
-            \end{align*}
-
-            See the more generic SL1Map for a more detailed description of the maps.
         type: "object"
         discriminator:
           propertyName: "type"
@@ -8290,7 +8403,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8329,7 +8442,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8403,7 +8516,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8435,7 +8548,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8474,7 +8587,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8506,7 +8619,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8561,7 +8674,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8623,7 +8736,7 @@ components:
             items:
               $ref: "#/components/schemas/SL1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\lmor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -8686,7 +8799,7 @@ components:
           m:
             $ref: "#/components/schemas/L1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\lmor"
             description: |
               The L1Map to lift.
           type:
@@ -8914,38 +9027,6 @@ components:
             \newcommand{\op}{\text{op}}
             \newcommand{\signSLMap}[5]{#1 \stackrel{#3,#4,#5}{\to_{\text{\textbf{SLMap}}}} #2 }
             \newcommand{\signSUMap}[5]{#1 \stackrel{#3,#4,#5}{\to_{\text{\textbf{SUMap}}}} #2 }
-          description: |2
-
-            Let $\pes$ and $\opt$ be two posets that we think about as indicating the ``resolution'' of a map.
-            For example, $\pes=\opt=\mathbb{N}$ could be the number of points to be used for representing an antichain.
-
-            Then a SELF must define a pair of maps $(\mlopt, \mlpes)$ with signature:
-            %
-            \begin{align*}
-                \mlopt: \opt^{\op} \toinpos (\lkdom \toinpos P\_C\_LowerSets ( P\_C\_Lexicographic (\lkcod, \lkimp) )) \\
-                \mlpes: \pes \toinpos (\lkdom \toinpos P\_C\_LowerSets ( P\_C\_Lexicographic (\lkcod, \lkimp) ))
-            \end{align*}
-            %
-            and such that 
-            \begin{equation}\label{eq:SLMap_1}
-               \mlpes(\cdot) \leq \mlopt(\cdot)              
-            \end{equation}
-
-            We use the notation:
-            \begin{align*}
-                m: \signSLMap{\lkdom}{\lkcod}{\lkimp}{\opt}{\pes}
-            \end{align*}
-
-
-            The interpretation is that they define a shrinking interval. 
-
-            Equation~\eqref{eq:SLMap_1} means that the pessimistic solution is always smaller than the optimistic solution.
-
-            For $\mlopt$, because it is defined as contravariant, $\mlopt(\bot_{\opt})$ is the largest, also most optimistic, solution, the map that says that every functionality is feasible.
-               As we go up in the poset \opt, we obtain smaller and smaller \textbf{solutions}.
-
-            On the other hand, for $\mlpes$, because it is defined as covariant, $\mlpes(\top_{\pes})$ is the smallest, also most pessimistic, solution, the map that says that no functionality is feasible. 
-            As we go down in the poset \pes, we obtain larger and larger \textbf{solutions}.
         type: "object"
         discriminator:
           propertyName: "type"
@@ -9545,7 +9626,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9577,7 +9658,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9651,7 +9732,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9683,7 +9764,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9723,7 +9804,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9755,7 +9836,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9785,7 +9866,7 @@ components:
           m:
             $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The map to be transformed"
           type:
             type: "string"
@@ -9812,7 +9893,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9841,7 +9922,7 @@ components:
           m:
             $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The map to be transformed"
           type:
             type: "string"
@@ -9866,7 +9947,7 @@ components:
             items:
               $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m_i"
+              symbol: "\\umor_\\idx"
               description: "Maps to be composed."
           labels:
             type: "array"
@@ -9896,7 +9977,7 @@ components:
           m:
             $ref: "#/components/schemas/SU1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The map to be transformed"
           kdom_units:
             $ref: "#/components/schemas/Unit"
@@ -9929,7 +10010,7 @@ components:
           m:
             $ref: "#/components/schemas/U1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
             description: |
               The U1Map to be lifted to a SU1Map.
           type:
@@ -10095,9 +10176,15 @@ components:
           pes:
             $ref: "#/components/schemas/Poset"
             description: "Poset of resolutions (pessimistic)"
+            x-latex-property:
+              symbol: "\\pes"
+              description: "The resolution poset for pessimistic estimate."
           opt:
             $ref: "#/components/schemas/Poset"
             description: "Poset of resolutions (optimistic)"
+            x-latex-property:
+              symbol: "\\opt"
+              description: "The resolution poset for optimistic estimate."
           type:
             type: "string"
             enum:
@@ -10134,21 +10221,6 @@ components:
           top_level: true
           order: 100
           color: "color-upper"
-          description: |2
-
-            Then a SELF must define a pair of maps $(\mlopt, \mlpes)$ with signature:
-            \begin{align*}
-                \mlopt: \opt^{\op} \toinpos (\ukdom^{\op} \toinpos P\_C\_UpperSets ( P\_C\_Lexicographic (\ukcod, \ukimp) )) \\
-                \mlpes: \pes \toinpos (\ukdom^{\op} \toinpos P\_C\_UpperSets ( P\_C\_Lexicographic (\ukcod, \ukimp) ))
-            \end{align*}
-
-
-
-
-            We use the notation:
-            \begin{align*}
-                m: \signSUMap{\ukdom}{\ukcod}{\ukimp}{\opt}{\pes}
-            \end{align*}
         type: "object"
         discriminator:
           propertyName: "type"
@@ -10797,18 +10869,6 @@ components:
           color: "color-upper"
           preamble: |
             \newcommand{\signUOMap}[3]{#1 \stackrel{#3}{\to}_{\text{\textbf{U1Map}}} #2 }
-          description: |
-            A SELF is a map of the form
-            %
-            \begin{align*}
-                \ukdom^{\op} \toinpos P\_C\_UpperSets (  \ukcod )
-            \end{align*}
-
-            We use the notation:
-            %
-            \begin{align*}
-                m: \signUOMap{\ukdom}{\ukcod}{\ukimp}
-            \end{align*}
         type: "object"
         discriminator:
           propertyName: "type"
@@ -11367,7 +11427,7 @@ components:
               $ref: "#/components/schemas/U1_Catalog_Options"
             x-latex-property:
               symbol: |
-                \langle f_i, r_i \rangle
+                \langle \fun_\idx, \rescj_\idx \rangle
               description: |
                 The options in the catalog
           type:
@@ -11381,10 +11441,10 @@ components:
         x-latex-schema:
           group: "10_simple"
           description: |
-            This map is defined by a catalog of options $\{\langle f_i,r_i \rangle \}$:
+            This map is defined by a catalog of options $\makelist{ \tup{\fun_\idx,\rescj_\idx} }$:
             %
             \begin{equation}
-                x \mapsto  \bigcup_i\ \{ \uparrow r_i \mid   f_i \leq x \}
+                \funcj \mapsto  \bigcup_\idx \ \{ \upit r_\idx \mid   f_\idx \leq x \}
             \end{equation}
           order: 100
         required:
@@ -11395,12 +11455,12 @@ components:
       properties:
         f:
           x-latex-property:
-            symbol: "f"
+            symbol: "\\fun"
             description: |
               A point in the domain.
         r:
           x-latex-property:
-            symbol: "r"
+            symbol: "\\rescj"
             description: |
               A point in the codomain
       required:
@@ -11565,7 +11625,7 @@ components:
             The identity map:
 
             \begin{equation*}
-                x \mapsto \uparrow x
+                x \mapsto \upit x
             \end{equation*}
         required:
         - "type"
@@ -11589,7 +11649,7 @@ components:
             This map is defined as follows:
             %
             \begin{equation}
-                \langle x_i \rangle_i \mapsto \bigcap_i \uparrow x_i
+                \langle x_i \rangle_i \mapsto \bigcap_i \upit x_i
             \end{equation}
         required:
         - "type"
@@ -11754,14 +11814,7 @@ components:
             \newcommand{\posA}{\mathcal{A}}
             \newcommand{\posB}{\mathcal{B}}
           description: |
-            Computes the upper inverse $\Uinv(m)$ of the monotone map $m$.
-
-            For a monotone map $m: \posA \to \posB$, the upper inverse is defined as:
-            %
-            \begin{align}
-                (\Uinv f):\ \posB^{\op}&\to_{\Pos} P\_C\_UpperSets(\posA)\\
-                q&\mapsto\{p\in\posA\mid q\leq f(p)\}
-            \end{align}
+            Computes the upper inverse of the monotone map $m$.
         required:
         - "m"
         - "type"
@@ -11795,7 +11848,7 @@ components:
             Lifts a monotone map to a U1Map in the obvious way:
             %
             \begin{equation}
-                SELF(m) : x \mapsto \uparrow m(x) 
+                SELF(m) : x \mapsto \upit m(x) 
             \end{equation}
         required:
         - "m"
@@ -11826,10 +11879,10 @@ components:
             It is defined as:
             % 
             \begin{equation}
-                x \mapsto \max \{ S \in P\_C\_UpperSets(\ukcod) \mid S \ \subseteq \ \uparrow_P x \}
+                x \mapsto \max \{ S \in P\_C\_UpperSets(\ukcod) \mid S \ \subseteq \ \upit_P x \}
             \end{equation}
 
-            The idea is that we want to ``represent'' the principal upper set $\uparrow_P x$ in terms of the codomain $\ukcod$.
+            The idea is that we want to ``represent'' the principal upper set $\upit_P x$ in terms of the codomain $\ukcod$.
 
             For example, consider the case 
             % 
@@ -11842,12 +11895,12 @@ components:
             The map would associate each even integer $x$ with the up closure of the smallest multiple of 3 greater than or equal to $x$:
             %
             \begin{align*}
-                10 &\mapsto \uparrow 12 \\
-                8 &\mapsto \uparrow 9 \\
-                6 &\mapsto \uparrow 6 \\
-                4 &\mapsto \uparrow 6 \\
-                2 &\mapsto \uparrow 3 \\
-                0 &\mapsto \uparrow 0 
+                10 &\mapsto \upit 12 \\
+                8 &\mapsto \upit 9 \\
+                6 &\mapsto \upit 6 \\
+                4 &\mapsto \upit 6 \\
+                2 &\mapsto \upit 3 \\
+                0 &\mapsto \upit 0 
             \end{align*}
 
             In general, the posets are not total orders, so the result is not necessarily a principal upper set.
@@ -11915,7 +11968,7 @@ components:
             This map is defined as follows:
             %
             \begin{equation}
-                \langle x_i \rangle_i \mapsto \bigcup_i \uparrow x_i
+                \langle x_i \rangle_i \mapsto \bigcup_i \upit x_i
             \end{equation}
         required:
         - "type"
@@ -12038,17 +12091,6 @@ components:
           color: "color-upper"
           preamble: |
             \newcommand{\signUMAP}[3]{#1 \stackrel{#3}{\to}_{\text{\textbf{UMAP}}} #2 }
-          description: |
-            A SELF is a map of the form
-            %
-            \begin{align*}
-                \ukdom^{\op} \toinpos P\_C\_UpperSets (   P\_C\_Lexicographic (\ukcod, \ukimp) ) 
-            \end{align*}
-
-            We use the notation:
-            \begin{align*}
-                m: \signUMAP{\ukdom}{\ukcod}{\ukimp}
-            \end{align*}
         type: "object"
         discriminator:
           propertyName: "type"
@@ -12074,7 +12116,7 @@ components:
           m:
             $ref: "#/components/schemas/UMap"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The original map"
           transform:
             $ref: "#/components/schemas/MonotoneMap"
@@ -12172,7 +12214,7 @@ components:
           m:
             $ref: "#/components/schemas/UMap"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The original map"
           type:
             type: "string"
@@ -12231,7 +12273,7 @@ components:
           m:
             $ref: "#/components/schemas/UMap"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The original map"
           m_proj:
             $ref: "#/components/schemas/U1Map"
@@ -12307,7 +12349,7 @@ components:
           m:
             $ref: "#/components/schemas/UMap"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: "The original map"
           kdom_units:
             $ref: "#/components/schemas/Unit"
@@ -12382,7 +12424,7 @@ components:
             symbol: "\\fun"
         r:
           x-latex-property:
-            symbol: "\\res"
+            symbol: "\\rescj"
         i:
           x-latex-property:
             symbol: "\\imp"
@@ -12437,7 +12479,7 @@ components:
           m:
             $ref: "#/components/schemas/U1Map"
             x-latex-property:
-              symbol: "m"
+              symbol: "\\umor"
               description: |
                 A U1Map morphism.
           value:
@@ -12455,17 +12497,6 @@ components:
         title: "Lifts a U1Map morphism with a constant value for the implementation."
         x-latex-schema:
           group: "40_lift"
-          description: |
-            Given a U1Map morphism
-            % 
-            \begin{equation*}
-                m: \ukdom \to \ukcod
-            \end{equation*}
-            and a constant value $v$ for the implementation, we construct a new morphism
-            % 
-            \begin{align*}
-                SELF (m, v) & : \ukdom \to \ukcod [\ukimp]
-            \end{align*}
         required:
         - "m"
         - "type"
@@ -12496,22 +12527,6 @@ components:
         title: "Lifts a U1Map morphism with a function to compute the implementation."
         x-latex-schema:
           group: "40_lift"
-          description: |
-            Given a U1Map morphism
-            % 
-            \begin{equation*}
-                m: \ukdom \to \ukcod
-            \end{equation*}
-            and a monotone map
-            % 
-            \begin{equation*}
-                f: \ukcod \times \ukdom^{\op} \toinpos \ukimp
-            \end{equation*}
-            we construct a new morphism
-            % 
-            \begin{align*}
-                SELF (m, f) & : \ukdom \to \ukcod [\ukimp]
-            \end{align*}
         required:
         - "m"
         - "transform"

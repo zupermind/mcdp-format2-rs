@@ -43,6 +43,51 @@ pub mod concrete {
         /// Check for a UMap.
         UCheck(UCheck),
     }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    #[serde(tag = "type")]
+    pub enum ComputeJob {
+        ComputeJob_F_to_R(ComputeJob_F_to_R),
+        ComputeJob_R_to_F(ComputeJob_R_to_F),
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct ComputeJob_F_to_R {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        pub address: Option<Box<Address>>,
+        /// The names of the axes of the computation job.
+        pub axes: Option<std::collections::HashMap<String, i64>>,
+        pub points: Option<Vec<Box<ComputePoint>>>,
+        pub f_b_r: Box<SUMap>,
+        pub f_i_r: Box<SUMap>,
+        pub f_r: Box<SU1Map>,
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct ComputeJob_R_to_F {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        pub address: Option<Box<Address>>,
+        /// The names of the axes of the computation job.
+        pub axes: Option<std::collections::HashMap<String, i64>>,
+        pub points: Option<Vec<Box<ComputePoint>>>,
+        pub r_b_f: Box<SLMap>,
+        pub r_f: Box<SL1Map>,
+        pub r_i_f: Box<SLMap>,
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct ComputePoint {
+        /// Key of the point, to be referenced later.
+        pub key: Option<String>,
+        /// Value of the point
+        pub value: Option<AnyValue>,
+    }
     /// Represents a connection between two nodes in the NDP graph
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Connection {
@@ -1732,7 +1777,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         pub labels: Option<Vec<String>>,
         pub maps: Vec<Box<MonotoneMap>>,
     }
-    /// A monotone map from the smash product of domains to athe product of codomains.
+    /// A monotone map from the smash product of domains to the product of codomains.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_C_DomSmashCodProd {
         /// A human-readable description of the object used for debug purposes.
@@ -2503,7 +2548,7 @@ This value must be greater than or equal to the threshold.*/
         pub opspace: Box<Poset>,
         pub step: String,
     }
-    /// Scaling in the U topology by a fraction.
+    /// Scaling in the L topology by a fraction.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_ScaleL {
         /// A human-readable description of the object used for debug purposes.
@@ -2791,7 +2836,7 @@ This value must be greater than or equal to the threshold.*/
         M_C_CoproductSmash(M_C_CoproductSmash),
         /// A monotone map from a product of domains to a smash product of codomains.
         M_C_DomProdCodSmash(M_C_DomProdCodSmash),
-        /// A monotone map from the smash product of domains to athe product of codomains.
+        /// A monotone map from the smash product of domains to the product of codomains.
         M_C_DomSmashCodProd(M_C_DomSmashCodProd),
         /// Domain union of monotone maps
         M_C_DomUnion(M_C_DomUnion),
@@ -2890,7 +2935,7 @@ This value must be greater than or equal to the threshold.*/
         M_RoundDown(M_RoundDown),
         /// Round up
         M_RoundUp(M_RoundUp),
-        /// Scaling in the U topology by a fraction.
+        /// Scaling in the L topology by a fraction.
         M_ScaleL(M_ScaleL),
         /// Scaling in the U topology by a fraction.
         M_ScaleU(M_ScaleU),
@@ -3631,16 +3676,16 @@ Current supported values are f32 and f64.*/
     /// Data for the query `FixFunMinReq`
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct QueryFixFunMinReqData {
-        pub f: Option<std::collections::HashMap<String, Box<Value>>>,
-        pub optimize_for: Option<Vec<String>>,
-        pub r: Option<std::collections::HashMap<String, Box<Value>>>,
+        pub f: std::collections::HashMap<String, Box<Value>>,
+        pub optimize_for: Vec<String>,
+        pub r: std::collections::HashMap<String, Box<Value>>,
     }
     /// Data for the query `FixReqMaxFun`
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct QueryFixReqMaxFunData {
-        pub f: Option<std::collections::HashMap<String, Box<Value>>>,
-        pub optimize_for: Option<Vec<String>>,
-        pub r: Option<std::collections::HashMap<String, Box<Value>>>,
+        pub f: std::collections::HashMap<String, Box<Value>>,
+        pub optimize_for: Vec<String>,
+        pub r: std::collections::HashMap<String, Box<Value>>,
     }
     /// Single query
     #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -3676,6 +3721,7 @@ Current supported values are f32 and f64.*/
     pub enum Root {
         /// Checks for the maps, as used in test cases.
         Check(Check),
+        ComputeJob(ComputeJob),
         /// Design problem with implementations (DPI)
         DP(DP),
         /// Map to lower sets of functionalities.
