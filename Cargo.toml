@@ -22,7 +22,7 @@ walkdir = { version = "2", default-features = false }
 [lib]
 path = "src/lib.rs"
 name = "mcdp_format2_rs"
-crate-type = ["lib"]
+crate-type = ["rlib"]
 required-features = []
 
 [[bin]]
