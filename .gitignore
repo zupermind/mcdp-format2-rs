@@ -24,6 +24,8 @@ Cargo.lock
 .env
 .env.local
 
-# sigil 695673c5865ecd948b9775f962fdbfb1
+# Log files
+
+# sigil ce95da00974c8e606045fa0657d0876d
 .idea
 *.ok
