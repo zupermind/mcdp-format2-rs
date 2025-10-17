@@ -1390,6 +1390,8 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         L_C_Series(L_C_Series),
         /// Trace
         L_C_Trace(L_C_Trace),
+        /// Trace (second version with extra imp)
+        L_C_TraceL(L_C_TraceL),
         /// Union of maps
         L_C_Union(L_C_Union),
         /// Decorates a map with units.
@@ -1490,6 +1492,21 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
     /// Trace
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct L_C_Trace {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        pub kcod: Box<Poset>,
+        pub kdom: Box<Poset>,
+        pub kimp: Box<Poset>,
+        pub m: Box<LMap>,
+        pub m_proj: Box<L1Map>,
+    }
+    /// Trace (second version with extra imp)
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct L_C_TraceL {
         /// A human-readable description of the object used for debug purposes.
         pub description: Option<String>,
         /// Unique hash for the object.
@@ -4147,6 +4164,8 @@ Current supported values are f32 and f64.*/
         SL_C_Series(SL_C_Series),
         /// Trace of a SLMap.
         SL_C_Trace(SL_C_Trace),
+        /// Trace of a SLMap (second version)
+        SL_C_TraceL(SL_C_TraceL),
         /// Composition of SLMaps using the union of the results.
         SL_C_Union(SL_C_Union),
         /// Decorates with units another SLMap.
@@ -4282,6 +4301,28 @@ Current supported values are f32 and f64.*/
     /// Trace of a SLMap.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct SL_C_Trace {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        /// Kleisli co-domain of the map.
+        pub kcod: Box<Poset>,
+        /// Kleisli domain of the map.
+        pub kdom: Box<Poset>,
+        /// Poset of implementations.
+        pub kimp: Box<Poset>,
+        /// Poset of resolutions (optimistic)
+        pub opt: Box<Poset>,
+        /// Poset of resolutions (pessimistic)
+        pub pes: Box<Poset>,
+        pub m: Box<SLMap>,
+        pub m_proj: Box<SL1Map>,
+    }
+    /// Trace of a SLMap (second version)
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct SL_C_TraceL {
         /// A human-readable description of the object used for debug purposes.
         pub description: Option<String>,
         /// Unique hash for the object.
@@ -4882,6 +4923,8 @@ Current supported values are f32 and f64.*/
         SU_C_Series(SU_C_Series),
         /// Trace of a SUMap.
         SU_C_Trace(SU_C_Trace),
+        /// Trace of a SUMap (second version)
+        SU_C_TraceL(SU_C_TraceL),
         /// Composition of SUMaps using the union of the results.
         SU_C_Union(SU_C_Union),
         /// Decorates with units another SUMap.
@@ -5014,6 +5057,28 @@ Current supported values are f32 and f64.*/
     /// Trace of a SUMap.
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct SU_C_Trace {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        /// Kleisli co-domain of the map.
+        pub kcod: Box<Poset>,
+        /// Kleisli domain of the map.
+        pub kdom: Box<Poset>,
+        /// Poset of implementations.
+        pub kimp: Box<Poset>,
+        /// Poset of resolutions (optimistic)
+        pub opt: Box<Poset>,
+        /// Poset of resolutions (pessimistic)
+        pub pes: Box<Poset>,
+        pub m: Box<SUMap>,
+        pub m_proj: Box<SU1Map>,
+    }
+    /// Trace of a SUMap (second version)
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct SU_C_TraceL {
         /// A human-readable description of the object used for debug purposes.
         pub description: Option<String>,
         /// Unique hash for the object.
@@ -5772,6 +5837,8 @@ Current supported values are f32 and f64.*/
         U_C_Series(U_C_Series),
         /// Trace
         U_C_Trace(U_C_Trace),
+        /// Trace (second version with extra imp)
+        U_C_TraceL(U_C_TraceL),
         /// Union of maps
         U_C_Union(U_C_Union),
         /// Decorates a map with units.
@@ -5872,6 +5939,21 @@ Current supported values are f32 and f64.*/
     /// Trace
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct U_C_Trace {
+        /// A human-readable description of the object used for debug purposes.
+        pub description: Option<String>,
+        /// Unique hash for the object.
+        pub hash: Option<String>,
+        /// Version of the MCDP format used to serialize this object (major.minor).
+        pub version: Option<String>,
+        pub kcod: Box<Poset>,
+        pub kdom: Box<Poset>,
+        pub kimp: Box<Poset>,
+        pub m: Box<UMap>,
+        pub m_proj: Box<U1Map>,
+    }
+    /// Trace (second version with extra imp)
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct U_C_TraceL {
         /// A human-readable description of the object used for debug purposes.
         pub description: Option<String>,
         /// Unique hash for the object.
