@@ -7,7 +7,6 @@ parameters:
 
 workflows:
   test:
-    max_auto_reruns: 0
     jobs:
     - test1:
         context: <<pipeline.parameters.context_name>>
@@ -108,4 +107,4 @@ jobs:
         when: always
     resource_class: zuper-ci-ns/r4
 
-# sigil 273ecf9c465d76bb3923f3badb7a1019
+# sigil 65e2ca0729e7e294d1029ae47b968373
