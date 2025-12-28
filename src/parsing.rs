@@ -133,12 +133,11 @@ fn list_paths_recursive(path: &Path, pattern: Pattern, results: &mut Vec<PathBuf
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
-            if path.is_file() {
-                if let Some(file_name) = path.file_name().and_then(OsStr::to_str) {
-                    if pattern.matches(file_name) {
-                        list_paths_recursive(path, pattern.clone(), results)?;
-                    }
-                }
+            if path.is_file()
+                && let Some(file_name) = path.file_name().and_then(OsStr::to_str)
+                && pattern.matches(file_name)
+            {
+                list_paths_recursive(path, pattern.clone(), results)?;
             }
         }
     } else {
