@@ -7,6 +7,9 @@ include = ["src/**/*", "Cargo.toml"]
 description = "A Rust library for loading and saving datasets in the MCDP V2 format."
 license = "Apache-2.0 OR MIT"
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = { version = "1", features = ["std"], default-features = false }
 ciborium = { version = "0.2.2", default-features = false,  features = ["default"]}
