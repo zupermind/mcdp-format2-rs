@@ -1828,7 +1828,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         pub labels: Option<Vec<String>>,
         pub maps: Vec<Box<MonotoneMap>>,
     }
-    /// Tests $\text{constant} \leq x$
+    /// Tests value less-than-or-equal input
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_C_Leq_X {
         /// A human-readable description of the object used for debug purposes.
@@ -1862,7 +1862,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         /// The monotone map that is lifted.
         pub m: Box<MonotoneMap>,
     }
-    /// Tests $\text{constant} < x$
+    /// Tests value less-than input
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_C_Lt_X {
         /// A human-readable description of the object used for debug purposes.
@@ -2286,7 +2286,7 @@ This value must be greater than or equal to the threshold.*/
         pub opspace: Box<Poset>,
         pub value: Box<Value>,
     }
-    /// Tests $x_1 \leq_P x_2$
+    /// Tests less-than-or-equal for a tuple
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_Leq {
         /// A human-readable description of the object used for debug purposes.
@@ -2765,7 +2765,7 @@ This value must be greater than or equal to the threshold.*/
         /// Domain of the monotone map
         pub dom: Box<Poset>,
     }
-    /// Tests $x \leq \text{constant}$
+    /// Tests input less-than-or-equal constant
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_X_Leq_C {
         /// A human-readable description of the object used for debug purposes.
@@ -2783,7 +2783,7 @@ This value must be greater than or equal to the threshold.*/
         /// Comparison value.
         pub value: Box<Value>,
     }
-    /// Tests $x < \text{constant}$
+    /// Tests input less-than constant
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct M_X_Lt_C {
         /// A human-readable description of the object used for debug purposes.

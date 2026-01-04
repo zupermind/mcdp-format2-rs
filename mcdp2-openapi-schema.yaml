@@ -3844,7 +3844,7 @@ components:
         title: "Tests constant LEQ value."
         x-latex-schema:
           group: "g90_tests"
-          title: "Tests $\\text{constant} \\leq x$"
+          title: "Tests value less-than-or-equal input"
           description: |
             The map $x \mapsto v \leq_P x$.
         required:
@@ -3902,7 +3902,7 @@ components:
         title: "Tests constant LT value."
         x-latex-schema:
           group: "g90_tests"
-          title: "Tests $\\text{constant} < x$"
+          title: "Tests value less-than input"
           description: |
             The map $x \mapsto v <_P x$.
         required:
@@ -4835,7 +4835,7 @@ components:
         title: "Tests v1 LEQ v2."
         x-latex-schema:
           group: "g90_tests"
-          title: "Tests $x_1 \\leq_P x_2$"
+          title: "Tests less-than-or-equal for a tuple"
           description: |
             The map $(x_1, x_2) \mapsto x_1 \leq_P x_2$.
           order: 100
@@ -5750,7 +5750,7 @@ components:
         title: "Tests value LEQ constant."
         x-latex-schema:
           group: "g90_tests"
-          title: "Tests $x \\leq \\text{constant}$"
+          title: "Tests input less-than-or-equal constant"
           description: |
             The map $x \mapsto x \leq_P v$.
         required:
@@ -5781,7 +5781,7 @@ components:
         title: "Tests value LT constant."
         x-latex-schema:
           group: "g90_tests"
-          title: "Tests $x < \\text{constant}$"
+          title: "Tests input less-than constant"
           description: |
             The map $x \mapsto x <_P v$.
         required:
