@@ -63,7 +63,7 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
 
     match format {
         DataFormat::YAML | DataFormat::YAML_GZ => {
-            let decoded = match std::str::from_utf8(&contents) {
+            let decoded = match core::str::from_utf8(&contents) {
                 Ok(s) => s,
                 Err(e) => {
                     return Err(anyhow::anyhow!("UTF decoding error: {e:?}"));
@@ -83,7 +83,7 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
             Ok(cbor_value)
         }
         DataFormat::JSON | DataFormat::JSON_GZ => {
-            let decoded = match std::str::from_utf8(&contents) {
+            let decoded = match core::str::from_utf8(&contents) {
                 Ok(s) => s,
                 Err(e) => {
                     return Err(anyhow::anyhow!("UTF decoding error: {e:?}"));
