@@ -2,9 +2,9 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::Parser;
 use glob::Pattern;
+use mcdp_format2_rs::Root;
 use mcdp_format2_rs::parsing::list_paths;
 use mcdp_format2_rs::parsing::read_mcdp_root;
-use mcdp_format2_rs::Root;
 use std::path::PathBuf;
 
 struct Config {

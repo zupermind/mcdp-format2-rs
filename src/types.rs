@@ -3,7 +3,8 @@
 #[allow(non_snake_case)]
 #[allow(unused_qualifications)]
 pub mod concrete {
-    use serde::{Serialize, Deserialize};
+    use serde::Deserialize;
+    use serde::Serialize;
     use serde_json::Value as AnyValue;
     use std::sync::Arc;
     /// Specifies the origin of an object from a repo and a library.
@@ -472,7 +473,7 @@ pub mod concrete {
         /// Pointer to the entity that generated this object.
         pub address: Option<Box<Address>>,
         /** A list of options that define the design problem.
-Each option is a tuple of functionality, requirement, blueprint, and implementation.*/
+        Each option is a tuple of functionality, requirement, blueprint, and implementation.*/
         pub options: Vec<Box<DP_Catalog_Options>>,
     }
     /// One option for the catalog
@@ -2235,7 +2236,7 @@ Each option is a tuple of functionality, requirement, blueprint, and implementat
         /// Threshold value.
         pub threshold: Box<Value>,
         /** Value returned by the map if the input is above the threshold.
-This value must be greater than or equal to the threshold.*/
+        This value must be greater than or equal to the threshold.*/
         pub value: Box<Value>,
     }
     /// Injection into a poset sum
@@ -3061,8 +3062,8 @@ This value must be greater than or equal to the threshold.*/
         /// Connections between the nodes in the NDP graph.
         pub connections: Vec<Box<Connection>>,
         /** A map of node identifiers to their corresponding NDPs in the graph.
-Each key is a unique identifier for a node, and the value is the NDP
-associated with that node.*/
+        Each key is a unique identifier for a node, and the value is the NDP
+        associated with that node.*/
         pub nodes: std::collections::HashMap<String, Box<NDP>>,
     }
     /// An NDP that contains a single DP.
@@ -3434,7 +3435,7 @@ associated with that node.*/
         /// Labels for the posets.
         pub labels: Option<Vec<String>>,
         /** The posets that are included in the intersection. They are all subposets
-of the ambient poset.*/
+        of the ambient poset.*/
         pub subs: Vec<Box<Poset>>,
     }
     /// Union of posets
@@ -3453,7 +3454,7 @@ of the ambient poset.*/
         /// Labels for the posets.
         pub labels: Option<Vec<String>>,
         /** The posets that are included in the union. They are all subposets
-of the ambient poset.*/
+        of the ambient poset.*/
         pub subs: Vec<Box<Poset>>,
     }
     /// An interval in a poset.
@@ -3534,12 +3535,12 @@ of the ambient poset.*/
         /// Pointer to the entity that generated this object.
         pub address: Option<Box<Address>>,
         /** Aliases for the elements of the poset.
-The keys are the aliases, and the values are arrays of elements that are equivalent to the alias.*/
+        The keys are the aliases, and the values are arrays of elements that are equivalent to the alias.*/
         pub aliases: Option<std::collections::HashMap<String, Vec<String>>>,
         /// The elements of the poset, strings.
         pub elements: Vec<String>,
         /** The relations of the poset, each relation is a pair of elements.
-The first element is less than the second element.*/
+        The first element is less than the second element.*/
         pub relations: Vec<Vec<String>>,
     }
     /// Poset of floating point numbers.
@@ -3554,7 +3555,7 @@ The first element is less than the second element.*/
         /// Pointer to the entity that generated this object.
         pub address: Option<Box<Address>>,
         /** Precision of the floating point number.
-Current supported values are f32 and f64.*/
+        Current supported values are f32 and f64.*/
         pub size: String,
     }
     /// Fractions with a maximum absolute value for numerator and denominator.
@@ -3732,7 +3733,7 @@ Current supported values are f32 and f64.*/
     }
     /** Top-level object types for what can be serialized in a file.
 
- The Root schema contains as subtypes all kinds of objects that can serialized in a MCDP file during an export operation.*/
+    The Root schema contains as subtypes all kinds of objects that can serialized in a MCDP file during an export operation.*/
     #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "kind")]
     pub enum Root {
