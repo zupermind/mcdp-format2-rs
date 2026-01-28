@@ -5,7 +5,6 @@ use std::fs::File;
 use std::path::Path;
 use std::path::PathBuf;
 use walkdir::WalkDir;
-
 use crate::Root;
 pub use anyhow::Result;
 use ciborium;
