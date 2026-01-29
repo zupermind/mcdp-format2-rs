@@ -78,7 +78,7 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> Result<ciborium::va
         }
         DataFormat::CBOR | DataFormat::CBOR_GZ => {
             let cbor_value: ciborium::value::Value =
-                ciborium::de::from_reader(&contents[..]).context("Failed to parse CBOR")?;
+                from_reader(&contents[..]).context("Failed to parse CBOR")?;
             Ok(cbor_value)
         }
         DataFormat::JSON | DataFormat::JSON_GZ => {
