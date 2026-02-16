@@ -2,7 +2,7 @@
 openapi: "3.1.1"
 info:
   title: "MCDP Format 2 schema"
-  version: "2.20.0"
+  version: "2.22.0"
   license:
     name: "Apache-2.0"
     url: "https://www.apache.org/licenses/LICENSE-2.0.html"
@@ -7874,10 +7874,15 @@ components:
             type: "string"
             enum:
             - "i8"
+            - "u8"
             - "i16"
+            - "u16"
             - "i32"
+            - "u32"
             - "i64"
+            - "u64"
             - "i128"
+            - "u128"
           type:
             type: "string"
             const: "P_Integer"

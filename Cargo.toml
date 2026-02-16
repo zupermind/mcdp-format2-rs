@@ -1,6 +1,6 @@
 [package]
 name = "mcdp-format2-rs"
-version = "2.20.0"
+version = "2.22.0"
 edition = "2024"
 include = ["src/**/*", "Cargo.toml"]
 
