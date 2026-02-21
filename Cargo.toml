@@ -2,10 +2,13 @@
 name = "mcdp-format2-rs"
 version = "2.22.0"
 edition = "2024"
-include = ["src/**/*", "Cargo.toml"]
-
+include = ["src/**/*", "Cargo.toml", "LICENSE", "README.md"]
 description = "A Rust library for loading and saving datasets in the MCDP V2 format."
+repository = "https://github.com/zupermind/mcdp-format2-rs"
 license = "Apache-2.0 OR MIT"
+readme = "README.md"
+keywords = ["mcdp"]
+categories = ["science"]
 
 [lints.rust]
 unsafe_code = "warn"
