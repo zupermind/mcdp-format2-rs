@@ -251,7 +251,7 @@ flate2 = { version = "1.1.2", features = ["rust_backend"], default-features = fa
 glob = { version = "0.3", default-features = false }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = { version = "1.0", features = ["preserve_order", "std"], default-features = false }
-serde_yaml = { version = "0.9", default-features = false }
+serde_yaml = { version = "0.9.34", default-features = false }
 walkdir = { version = "2", default-features = false }
 
 
