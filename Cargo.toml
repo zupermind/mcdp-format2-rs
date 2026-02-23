@@ -247,7 +247,7 @@ let_and_return = "allow"
 anyhow = { version = "1", features = ["std"], default-features = false }
 ciborium = { version = "0.2.2", default-features = false,  features = ["default"]}
 clap = { version = "4.5", features = ["derive", "help", "std", "color", "usage", "error-context", "suggestions"], default-features = false }
-flate2 = { version = "1.1.2", features = ["zlib"], default-features = false }
+flate2 = { version = "1.1.2", features = ["rust_backend"], default-features = false }
 glob = { version = "0.3", default-features = false }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = { version = "1.0", features = ["preserve_order", "std"], default-features = false }
