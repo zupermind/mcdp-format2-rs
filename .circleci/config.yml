@@ -15,7 +15,7 @@ workflows:
             ignore: /.*/
 
 orbs:
-  codecov: codecov/codecov@5
+  codecov: codecov/codecov@6
 
 jobs:
 
@@ -107,4 +107,4 @@ jobs:
         when: always
     resource_class: zuper-ci-ns/r4
 
-# sigil 65e2ca0729e7e294d1029ae47b968373
+# sigil f976750f6b37307fe11b02842759abab
