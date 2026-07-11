@@ -1,3 +1,13 @@
+.PHONY: check cargo-check install
+
+check: cargo-check
+
+cargo-check:
+	cargo check --workspace --all-targets --keep-going
+
+install:
+	cargo install --path . --locked --force
+
 all:
 
 test:
