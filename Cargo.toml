@@ -282,10 +282,10 @@ harness = false
 
 [profile.dev]
 lto           = "thin"       # never "fat" — merges all IR into one module → OOM
-codegen-units = 16           # keep high; =1 is the memory anti-pattern
+# codegen-units = 16           # keep high; =1 is the memory anti-pattern
 debug         = "line-tables-only"
 
 [profile.release]
 lto           = "thin"       # never "fat" — merges all IR into one module → OOM
-codegen-units = 16           # keep high; =1 is the memory anti-pattern
+# codegen-units = 16           # keep high; =1 is the memory anti-pattern
 debug         = "line-tables-only"
