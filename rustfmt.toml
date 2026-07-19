@@ -2,4 +2,8 @@ imports_granularity = "Item"
 # blank_lines_upper_bound = 2
 # blank_lines_lower_bound = 1
 
-# sigil 339811552583c0fc9deeb7235ca6f853
+# Keep the function-call width within rustfmt's configured line width.
+max_width = 120
+fn_call_width = 120
+
+# sigil 367f096a02c93988ccc772d492a2e548
