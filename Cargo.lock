@@ -68,12 +68,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.104"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
-
-[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -174,6 +168,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 
 [[package]]
+name = "colored"
+version = "3.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
+dependencies = [
+ "windows-sys",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -270,6 +273,8 @@ checksum = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
 dependencies = [
  "equivalent",
  "hashbrown",
+ "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -300,7 +305,6 @@ dependencies = [
 name = "mcdp-format2-rs"
 version = "2.22.0"
 dependencies = [
- "anyhow",
  "ciborium",
  "clap",
  "datatest-stable",
@@ -310,6 +314,8 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "walkdir",
+ "zuper-errors2",
+ "zuper-errors2-elab",
 ]
 
 [[package]]
@@ -552,3 +558,34 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zuper-errors2"
+version = "7.2.2901010000"
+dependencies = [
+ "colored",
+ "indexmap",
+ "serde",
+ "zuper-errors2-derive",
+]
+
+[[package]]
+name = "zuper-errors2-derive"
+version = "7.2.2901010000"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "zuper-errors2-elab"
+version = "7.2.2901010000"
+dependencies = [
+ "indexmap",
+ "zuper-errors2",
+]
+
+[[patch.unused]]
+name = "zuper-errors"
+version = "7.2.2901010000"

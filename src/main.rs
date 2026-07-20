@@ -1,11 +1,13 @@
-use anyhow::Context;
-use anyhow::Result;
 use clap::Parser;
 use glob::Pattern;
+use mcdp_format2_rs::Mf2rError;
 use mcdp_format2_rs::Root;
 use mcdp_format2_rs::parsing::list_paths;
 use mcdp_format2_rs::parsing::read_mcdp_root;
 use std::path::PathBuf;
+use zuper_errors2::ZMainResult;
+use zuper_errors2::ZResult;
+use zuper_errors2::zerror_from_kv;
 
 struct Config {
     pub pattern: Pattern,
@@ -28,10 +30,18 @@ struct Cli {
     #[arg(short, long)]
     verbose: bool,
 }
-fn parse_args() -> Result<Config> {
-    let cli = Cli::parse();
-
-    let pattern = Pattern::new(&cli.pattern).context("Invalid pattern")?;
+/// Build the runtime [`Config`] from parsed CLI arguments.
+///
+/// Split out from [`parse_args`] so the glob-pattern validation path (which
+/// mints [`Mf2rError::InvalidPattern`]) is reachable from a test without
+/// touching the real process argv.
+fn build_config(cli: Cli) -> ZResult<Config, Mf2rError> {
+    let pattern = zerror_from_kv!(
+        Pattern::new(&cli.pattern),
+        Mf2rError::InvalidPattern,
+        "invalid pattern",
+        pattern = &cli.pattern,
+    )?;
 
     Ok(Config {
         pattern,
@@ -40,7 +50,11 @@ fn parse_args() -> Result<Config> {
     })
 }
 
-fn main() -> Result<()> {
+fn parse_args() -> ZResult<Config, Mf2rError> {
+    build_config(Cli::parse())
+}
+
+fn main() -> ZMainResult<Mf2rError> {
     let config = parse_args()?;
 
     if config.verbose {
@@ -64,4 +78,49 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zuper_errors2::ErrorCode;
+    use zuper_errors2::ErrorLocus;
+    use zuper_errors2::ErrorStability;
+    use zuper_errors2::ZTestResult;
+    use zuper_errors2::ztest_bail;
+    use zuper_errors2::ztest_ensure;
+
+    /// An invalid glob pattern supplied on the command line surfaces
+    /// `MF2R.cli.invalid-pattern` and retains the concrete `glob::PatternError`.
+    #[test]
+    fn invalid_glob_pattern_is_cli_invalid_pattern() -> ZTestResult<()> {
+        // `a**b` embeds a recursive wildcard that does not form its own path
+        // component, which `glob::Pattern::new` rejects. clap accepts it as a
+        // plain string argument.
+        let cli = match Cli::try_parse_from([
+            "mcdp-format2-rs-load",
+            "some-path",
+            "--pattern",
+            "a**b",
+        ]) {
+            Ok(cli) => cli,
+            Err(e) => ztest_bail!("clap should accept the raw args; got {e}"),
+        };
+        let err = match build_config(cli) {
+            Ok(_) => ztest_bail!("expected an invalid glob pattern to fail"),
+            Err(err) => err,
+        };
+        ztest_ensure!(
+            err.primary_code() == ErrorCode::from_dotted("MF2R.cli.invalid-pattern"),
+            "unexpected primary code: {:?}",
+            err.primary_code(),
+        );
+        ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
+        ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
+        ztest_ensure!(
+            err.find_external::<glob::PatternError>().is_some(),
+            "expected the concrete glob::PatternError to remain recoverable",
+        );
+        Ok(())
+    }
 }
