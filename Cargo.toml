@@ -295,6 +295,6 @@ debug         = "line-tables-only"
 [patch]
 
 [patch.zuper-registry]
-zuper-errors = { path = "../../15-common/zuper-rs-utils/crates/zuper-errors" }
+
 zuper-errors2 = { path = "../../15-common/zuper-errors2/crates/zuper-errors2" }
 zuper-errors2-elab = { path = "../../15-common/zuper-errors2/crates/zuper-errors2-elab" }

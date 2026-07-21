@@ -83,15 +83,14 @@ fn main() -> ZMainResult<Mf2rError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zuper_errors2::ErrorCode;
     use zuper_errors2::ErrorLocus;
     use zuper_errors2::ErrorStability;
     use zuper_errors2::ZTestResult;
     use zuper_errors2::ztest_bail;
     use zuper_errors2::ztest_ensure;
 
-    /// An invalid glob pattern supplied on the command line surfaces
-    /// `MF2R.cli.invalid-pattern` and retains the concrete `glob::PatternError`.
+    /// An invalid glob pattern supplied on the command line produces
+    /// `Mf2rError::InvalidPattern` and retains the concrete `glob::PatternError`.
     #[test]
     fn invalid_glob_pattern_is_cli_invalid_pattern() -> ZTestResult<()> {
         // `a**b` embeds a recursive wildcard that does not form its own path
@@ -111,14 +110,16 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.cli.invalid-pattern"),
+            err.primary_code() == Mf2rError::InvalidPattern.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<glob::PatternError>().is_some(),
+            err.contains_code(&zuper_errors2::ErrorCode::for_external_type::<
+                glob::PatternError,
+            >()),
             "expected the concrete glob::PatternError to remain recoverable",
         );
         Ok(())

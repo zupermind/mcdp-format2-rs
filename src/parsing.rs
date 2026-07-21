@@ -328,8 +328,7 @@ mod tests {
     use zuper_errors2::ztest_bail;
     use zuper_errors2::ztest_ensure;
 
-    /// An unrecognized format is a caller-persistent classification with the
-    /// stable `MF2R.parse.unknown-format` identity.
+    /// An unrecognized format produces a caller-persistent `Mf2rError::UnknownFormat`.
     #[test]
     fn unknown_format_is_caller_persistent() -> ZTestResult<()> {
         let err = match parse_data(b"whatever", DataFormat::Unknown("x.bin".to_owned())) {
@@ -337,7 +336,11 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.unknown-format"),
+            err.primary_code()
+                == Mf2rError::UnknownFormat {
+                    format: "x.bin".to_owned(),
+                }
+                .code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
@@ -346,8 +349,8 @@ mod tests {
         Ok(())
     }
 
-    /// Non-UTF-8 bytes for a text format surface `MF2R.parse.invalid-utf8` and
-    /// retain the concrete `std::str::Utf8Error`.
+    /// Non-UTF-8 bytes for a text format produce `Mf2rError::Utf8` and retain
+    /// the concrete `std::str::Utf8Error`.
     #[test]
     fn invalid_utf8_yaml_retains_utf8_error() -> ZTestResult<()> {
         let err = match parse_data(&[0xff, 0xfe, 0xfd], DataFormat::YAML) {
@@ -355,21 +358,21 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.invalid-utf8"),
+            err.primary_code() == Mf2rError::Utf8.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<std::str::Utf8Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<std::str::Utf8Error>()),
             "expected the concrete std::str::Utf8Error to remain recoverable",
         );
         Ok(())
     }
 
-    /// A malformed YAML document surfaces `MF2R.parse.yaml-failed` and retains
-    /// the concrete `serde_yaml::Error`.
+    /// A malformed YAML document produces `Mf2rError::Yaml` and retains the
+    /// concrete `serde_yaml::Error`.
     #[test]
     fn bad_yaml_retains_serde_yaml_error() -> ZTestResult<()> {
         // Unterminated flow sequence: valid UTF-8, invalid YAML.
@@ -378,21 +381,21 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.yaml-failed"),
+            err.primary_code() == Mf2rError::Yaml.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<serde_yaml::Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<serde_yaml::Error>()),
             "expected the concrete serde_yaml::Error to remain recoverable",
         );
         Ok(())
     }
 
-    /// A malformed JSON document surfaces `MF2R.parse.json-failed` and retains
-    /// the concrete `serde_json::Error`.
+    /// A malformed JSON document produces `Mf2rError::Json` and retains the
+    /// concrete `serde_json::Error`.
     #[test]
     fn bad_json_retains_serde_json_error() -> ZTestResult<()> {
         let err = match parse_data(b"{ not valid json", DataFormat::JSON) {
@@ -400,21 +403,21 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.json-failed"),
+            err.primary_code() == Mf2rError::Json.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<serde_json::Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<serde_json::Error>()),
             "expected the concrete serde_json::Error to remain recoverable",
         );
         Ok(())
     }
 
-    /// Malformed CBOR bytes surface `MF2R.parse.cbor-failed` and retain the
-    /// concrete `ciborium::de::Error<std::io::Error>` decode error.
+    /// Malformed CBOR bytes produce `Mf2rError::Cbor` and retain the concrete
+    /// `ciborium::de::Error<std::io::Error>` decode error.
     ///
     /// `from_reader` is driven over a `&[u8]` reader, which — with ciborium's
     /// `std` feature — resolves `R::Error` to `std::io::Error`, so the retained
@@ -427,23 +430,23 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.cbor-failed"),
+            err.primary_code() == Mf2rError::Cbor.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<ciborium::de::Error<std::io::Error>>()
-                .is_some(),
+            err.contains_code(
+                &ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),
+            ),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
     }
 
-    /// Corrupt gzip bytes for a `*_GZ` format surface
-    /// `MF2R.parse.decompress-failed` and retain the concrete `std::io::Error`
-    /// raised by the inflate reader.
+    /// Corrupt gzip bytes for a `*_GZ` format produce `Mf2rError::Decompress`
+    /// and retain the concrete `std::io::Error` raised by the inflate reader.
     #[test]
     fn corrupt_gzip_is_decompress_failed_and_retains_io_error() -> ZTestResult<()> {
         // Valid gzip magic (0x1f 0x8b) + deflate method (0x08) + a well-formed
@@ -456,22 +459,22 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.parse.decompress-failed"),
+            err.primary_code() == Mf2rError::Decompress.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<std::io::Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",
         );
         Ok(())
     }
 
-    /// A value whose shape does not fit the requested `T` surfaces
-    /// `MF2R.convert.decode-typed` and retains the concrete ciborium decode
-    /// error captured while deserializing the re-encoded CBOR bytes.
+    /// A value whose shape does not fit the requested `T` produces
+    /// `Mf2rError::DecodeTyped` and retains the concrete ciborium decode error
+    /// captured while deserializing the re-encoded CBOR bytes.
     #[test]
     fn typed_decode_mismatch_is_decode_typed_and_retains_external() -> ZTestResult<()> {
         // A text value cannot deserialize into u32; `from_cbor_value` mints
@@ -482,21 +485,22 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.convert.decode-typed"),
+            err.primary_code() == Mf2rError::DecodeTyped.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.find_external::<ciborium::de::Error<std::io::Error>>()
-                .is_some(),
+            err.contains_code(
+                &ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),
+            ),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
     }
 
-    /// A directory-traversal failure surfaces `MF2R.fs.walk-failed` with both
+    /// A directory-traversal failure produces `Mf2rError::WalkFailed` with both
     /// axes honestly `Unknown`, and retains the concrete `walkdir::Error`.
     ///
     /// The fixture is a self-referential symlink: under `follow_links(true)`,
@@ -541,20 +545,20 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.fs.walk-failed"),
+            err.primary_code() == Mf2rError::WalkFailed.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
         ztest_ensure!(
-            err.find_external::<walkdir::Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<walkdir::Error>()),
             "expected the concrete walkdir::Error to remain recoverable",
         );
         Ok(())
     }
 
-    /// Reading a nonexistent path surfaces `MF2R.fs.read-failed` with both axes
+    /// Reading a nonexistent path produces `Mf2rError::ReadFile` with both axes
     /// honestly `Unknown`, and retains the concrete `std::io::Error`.
     #[test]
     fn read_missing_path_is_read_failed_unknown_and_retains_io_error() -> ZTestResult<()> {
@@ -565,7 +569,7 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == ErrorCode::from_dotted("MF2R.fs.read-failed"),
+            err.primary_code() == Mf2rError::ReadFile.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
@@ -576,7 +580,7 @@ mod tests {
             "expected the std::io::Error to be retained as a cause",
         );
         ztest_ensure!(
-            err.find_external::<std::io::Error>().is_some(),
+            err.contains_code(&ErrorCode::for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",
         );
         Ok(())

@@ -585,7 +585,3 @@ dependencies = [
  "indexmap",
  "zuper-errors2",
 ]
-
-[[patch.unused]]
-name = "zuper-errors"
-version = "7.2.2901010000"
