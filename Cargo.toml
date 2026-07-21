@@ -253,8 +253,8 @@ serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = { version = "1.0", features = ["preserve_order", "std"], default-features = false }
 serde_yaml = { version = "0.9.34", default-features = false }
 walkdir = { version = "2", default-features = false }
-zuper-errors2 = { version = ">=7.2.2607201851, <7.3", default-features = false, registry = "zuper-registry" }
-zuper-errors2-elab = { version = ">=7.2.2607201851, <7.3", default-features = false, registry = "zuper-registry" }
+zuper-errors2 = { version = ">=7.2.2607211500, <7.3", default-features = false, registry = "zuper-registry" }
+zuper-errors2-elab = { version = ">=7.2.2607211500, <7.3", default-features = false, registry = "zuper-registry" }
 
 
 [lib]
