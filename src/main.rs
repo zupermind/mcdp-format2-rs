@@ -96,12 +96,7 @@ mod tests {
         // `a**b` embeds a recursive wildcard that does not form its own path
         // component, which `glob::Pattern::new` rejects. clap accepts it as a
         // plain string argument.
-        let cli = match Cli::try_parse_from([
-            "mcdp-format2-rs-load",
-            "some-path",
-            "--pattern",
-            "a**b",
-        ]) {
+        let cli = match Cli::try_parse_from(["mcdp-format2-rs-load", "some-path", "--pattern", "a**b"]) {
             Ok(cli) => cli,
             Err(e) => ztest_bail!("clap should accept the raw args; got {e}"),
         };
@@ -117,9 +112,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&zuper_errors2::ErrorCode::for_external_type::<
-                glob::PatternError,
-            >()),
+            err.contains_code(&zuper_errors2::ErrorCode::for_external_type::<glob::PatternError>()),
             "expected the concrete glob::PatternError to remain recoverable",
         );
         Ok(())

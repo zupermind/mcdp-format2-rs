@@ -54,60 +54,37 @@ pub fn detect_format(path: &Path) -> DataFormat {
     DataFormat::Unknown(just_basename.to_string())
 }
 
-fn interpret_cvalue(
-    contents: &[u8],
-    format: &DataFormat,
-) -> ZResult<ciborium::value::Value, Mf2rError> {
+fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::value::Value, Mf2rError> {
     let mut contents: Vec<u8> = contents.to_vec();
     match format {
         DataFormat::YAML_GZ | DataFormat::CBOR_GZ | DataFormat::JSON_GZ => {
-            contents = zerror_from!(
-                decompress_gz(&contents),
-                Mf2rError::Decompress,
-                "could not decompress gzip payload",
-            )?;
+            contents =
+                zerror_from!(decompress_gz(&contents), Mf2rError::Decompress, "could not decompress gzip payload",)?;
         }
         _ => {}
     };
 
     match format {
         DataFormat::YAML | DataFormat::YAML_GZ => {
-            let decoded = zerror_from!(
-                core::str::from_utf8(&contents),
-                Mf2rError::Utf8,
-                "input is not valid UTF-8",
-            )?;
+            let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
-            let yaml_value: serde_yaml::Value = zerror_from!(
-                serde_yaml::from_str(decoded),
-                Mf2rError::Yaml,
-                "could not parse YAML",
-            )?;
+            let yaml_value: serde_yaml::Value =
+                zerror_from!(serde_yaml::from_str(decoded), Mf2rError::Yaml, "could not parse YAML",)?;
 
             // Convert serde_yaml::Value to ciborium::value::Value
             let cbor_value = yaml_to_cbor_value(yaml_value)?;
             Ok(cbor_value)
         }
         DataFormat::CBOR | DataFormat::CBOR_GZ => {
-            let cbor_value: ciborium::value::Value = zerror_from!(
-                from_reader(&contents[..]),
-                Mf2rError::Cbor,
-                "could not parse CBOR",
-            )?;
+            let cbor_value: ciborium::value::Value =
+                zerror_from!(from_reader(&contents[..]), Mf2rError::Cbor, "could not parse CBOR",)?;
             Ok(cbor_value)
         }
         DataFormat::JSON | DataFormat::JSON_GZ => {
-            let decoded = zerror_from!(
-                core::str::from_utf8(&contents),
-                Mf2rError::Utf8,
-                "input is not valid UTF-8",
-            )?;
+            let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
-            let json_value: serde_json::Value = zerror_from!(
-                serde_json::from_str(decoded),
-                Mf2rError::Json,
-                "could not parse JSON",
-            )?;
+            let json_value: serde_json::Value =
+                zerror_from!(serde_json::from_str(decoded), Mf2rError::Json, "could not parse JSON",)?;
 
             // Convert serde_json::Value to ciborium::value::Value
             let cbor_value = json_to_cbor_value(json_value)?;
@@ -131,12 +108,8 @@ fn decompress_gz(compressed: &[u8]) -> Result<Vec<u8>, std::io::Error> {
 }
 
 fn read_file(path: &Path) -> ZResult<Vec<u8>, Mf2rError> {
-    let mut file = zerror_from_kv!(
-        File::open(path),
-        Mf2rError::ReadFile,
-        "could not open file",
-        path = path.display(),
-    )?;
+    let mut file =
+        zerror_from_kv!(File::open(path), Mf2rError::ReadFile, "could not open file", path = path.display(),)?;
     let mut contents = Vec::new();
     zerror_from_kv!(
         file.read_to_end(&mut contents),
@@ -155,11 +128,7 @@ pub fn list_paths(path: &Path, pattern: Pattern) -> ZResult<Vec<PathBuf>, Mf2rEr
     Ok(res)
 }
 
-fn list_paths_recursive(
-    path: &Path,
-    pattern: Pattern,
-    results: &mut Vec<PathBuf>,
-) -> ZResult<(), Mf2rError> {
+fn list_paths_recursive(path: &Path, pattern: Pattern, results: &mut Vec<PathBuf>) -> ZResult<(), Mf2rError> {
     if path.is_dir() {
         for entry in WalkDir::new(path).follow_links(true) {
             // A traversal failure (symlink loop, permission denial, transient
@@ -192,17 +161,10 @@ fn list_paths_recursive(
 fn from_cbor_value<T: DeserializeOwned>(val: &ciborium::value::Value) -> ZResult<T, Mf2rError> {
     let mut buf = Vec::new();
     // Serialize the Value to CBOR bytes
-    zerror_from!(
-        into_writer(val, &mut buf),
-        Mf2rError::Encode,
-        "could not encode value to CBOR",
-    )?;
+    zerror_from!(into_writer(val, &mut buf), Mf2rError::Encode, "could not encode value to CBOR",)?;
     // Deserialize CBOR bytes into T
-    let t = zerror_from!(
-        from_reader(buf.as_slice()),
-        Mf2rError::DecodeTyped,
-        "could not decode CBOR into target type",
-    )?;
+    let t =
+        zerror_from!(from_reader(buf.as_slice()), Mf2rError::DecodeTyped, "could not decode CBOR into target type",)?;
     Ok(t)
 }
 
@@ -236,10 +198,7 @@ fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> ZResult<ciborium::value:
             } else if let Some(f) = n.as_f64() {
                 Value::Float(f)
             } else {
-                return Err(zerror!(
-                    Mf2rError::UnsupportedNumber,
-                    "number has no CBOR representation",
-                ));
+                return Err(zerror!(Mf2rError::UnsupportedNumber, "number has no CBOR representation",));
             }
         }
         serde_yaml::Value::String(s) => Value::Text(s),
@@ -281,10 +240,7 @@ fn json_to_cbor_value(json_value: serde_json::Value) -> ZResult<ciborium::value:
             } else if let Some(f) = n.as_f64() {
                 Value::Float(f)
             } else {
-                return Err(zerror!(
-                    Mf2rError::UnsupportedNumber,
-                    "number has no CBOR representation",
-                ));
+                return Err(zerror!(Mf2rError::UnsupportedNumber, "number has no CBOR representation",));
             }
         }
         serde_json::Value::String(s) => Value::Text(s),
@@ -310,10 +266,7 @@ fn json_to_cbor_value(json_value: serde_json::Value) -> ZResult<ciborium::value:
 }
 
 /// Parse data from bytes using the specified format
-pub fn parse_data(
-    contents: &[u8],
-    format: DataFormat,
-) -> ZResult<ciborium::value::Value, Mf2rError> {
+pub fn parse_data(contents: &[u8], format: DataFormat) -> ZResult<ciborium::value::Value, Mf2rError> {
     interpret_cvalue(contents, &format)
 }
 
@@ -437,9 +390,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(
-                &ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),
-            ),
+            err.contains_code(&ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
@@ -492,9 +443,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(
-                &ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),
-            ),
+            err.contains_code(&ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
@@ -562,9 +511,7 @@ mod tests {
     /// honestly `Unknown`, and retains the concrete `std::io::Error`.
     #[test]
     fn read_missing_path_is_read_failed_unknown_and_retains_io_error() -> ZTestResult<()> {
-        let err = match read::<Root>(Path::new(
-            "/nonexistent/mcdp-format2-rs/definitely-does-not-exist.yaml.gz",
-        )) {
+        let err = match read::<Root>(Path::new("/nonexistent/mcdp-format2-rs/definitely-does-not-exist.yaml.gz")) {
             Ok(_) => ztest_bail!("expected read to fail for a nonexistent path"),
             Err(err) => err,
         };
@@ -575,10 +522,7 @@ mod tests {
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
-        ztest_ensure!(
-            err.contains_external_error(),
-            "expected the std::io::Error to be retained as a cause",
-        );
+        ztest_ensure!(err.contains_external_error(), "expected the std::io::Error to be retained as a cause",);
         ztest_ensure!(
             err.contains_code(&ErrorCode::for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",

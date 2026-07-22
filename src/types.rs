@@ -2942,13 +2942,9 @@ pub mod concrete {
         /// Maps a point to the largest upper set containing its closure
         M_ReprUpperSet(M_ReprUpperSet),
         /// Largest principal lower set in the poset.
-        M_RepresentPrincipalLowerSet_TotalOrderBounded(
-            M_RepresentPrincipalLowerSet_TotalOrderBounded,
-        ),
+        M_RepresentPrincipalLowerSet_TotalOrderBounded(M_RepresentPrincipalLowerSet_TotalOrderBounded),
         /// Largest principal upper set in the poset.
-        M_RepresentPrincipalUpperSet_TotalOrderBounded(
-            M_RepresentPrincipalUpperSet_TotalOrderBounded,
-        ),
+        M_RepresentPrincipalUpperSet_TotalOrderBounded(M_RepresentPrincipalUpperSet_TotalOrderBounded),
         /// Round down
         M_RoundDown(M_RoundDown),
         /// Round up

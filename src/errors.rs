@@ -80,7 +80,6 @@ pub enum Mf2rError {
     /// errors. No single locus or stability is true for the whole kind, so both
     /// axes are left `Unknown` per the manual's rule (chapter 51) to classify
     /// only when the kind itself determines the axis.
-
     ReadFile,
 
     /// A directory tree could not be traversed.
@@ -93,7 +92,6 @@ pub enum Mf2rError {
     /// (chapter 51): classify only when the kind itself determines the axis.
     /// The concrete `walkdir::Error` is retained as a cause so a caller can
     /// recover the failed path and underlying reason.
-
     WalkFailed,
 
     /// The supplied glob pattern was not valid.
