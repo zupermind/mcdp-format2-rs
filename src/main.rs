@@ -5,7 +5,6 @@ use mcdp_format2_rs::Root;
 use mcdp_format2_rs::parsing::list_paths;
 use mcdp_format2_rs::parsing::read_mcdp_root;
 use std::path::PathBuf;
-use zuper_errors2::ZMainResult;
 use zuper_errors2::ZResult;
 use zuper_errors2::zerror_from_kv;
 
@@ -54,7 +53,8 @@ fn parse_args() -> ZResult<Config, Mf2rError> {
     build_config(Cli::parse())
 }
 
-fn main() -> ZMainResult<Mf2rError> {
+#[zuper_errors2::zerror_main]
+fn main() -> ZResult<(), Mf2rError> {
     let config = parse_args()?;
 
     if config.verbose {
@@ -112,7 +112,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&zuper_errors2::ErrorCode::for_external_type::<glob::PatternError>()),
+            err.contains_code(&zuper_errors2::error_code_for_external_type::<glob::PatternError>()),
             "expected the concrete glob::PatternError to remain recoverable",
         );
         Ok(())

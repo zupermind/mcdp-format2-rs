@@ -561,7 +561,7 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-errors2"
-version = "7.2.2901010000"
+version = "8.0.2901010000"
 dependencies = [
  "colored",
  "indexmap",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "7.2.2901010000"
+version = "8.0.2901010000"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -580,7 +580,7 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "7.2.2901010000"
+version = "8.0.2901010000"
 dependencies = [
  "indexmap",
  "zuper-errors2",

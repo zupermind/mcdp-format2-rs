@@ -274,10 +274,10 @@ pub fn parse_data(contents: &[u8], format: DataFormat) -> ZResult<ciborium::valu
 mod tests {
     use super::*;
     use crate::Root;
-    use zuper_errors2::ErrorCode;
     use zuper_errors2::ErrorLocus;
     use zuper_errors2::ErrorStability;
     use zuper_errors2::ZTestResult;
+    use zuper_errors2::error_code_for_external_type;
     use zuper_errors2::ztest_bail;
     use zuper_errors2::ztest_ensure;
 
@@ -318,7 +318,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<std::str::Utf8Error>()),
+            err.contains_code(&error_code_for_external_type::<std::str::Utf8Error>()),
             "expected the concrete std::str::Utf8Error to remain recoverable",
         );
         Ok(())
@@ -341,7 +341,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<serde_yaml::Error>()),
+            err.contains_code(&error_code_for_external_type::<serde_yaml::Error>()),
             "expected the concrete serde_yaml::Error to remain recoverable",
         );
         Ok(())
@@ -363,7 +363,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<serde_json::Error>()),
+            err.contains_code(&error_code_for_external_type::<serde_json::Error>()),
             "expected the concrete serde_json::Error to remain recoverable",
         );
         Ok(())
@@ -390,7 +390,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),),
+            err.contains_code(&error_code_for_external_type::<ciborium::de::Error<std::io::Error>>(),),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
@@ -417,7 +417,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<std::io::Error>()),
+            err.contains_code(&error_code_for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",
         );
         Ok(())
@@ -443,7 +443,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<ciborium::de::Error<std::io::Error>>(),),
+            err.contains_code(&error_code_for_external_type::<ciborium::de::Error<std::io::Error>>(),),
             "expected the concrete ciborium::de::Error<std::io::Error> to remain recoverable",
         );
         Ok(())
@@ -501,7 +501,7 @@ mod tests {
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<walkdir::Error>()),
+            err.contains_code(&error_code_for_external_type::<walkdir::Error>()),
             "expected the concrete walkdir::Error to remain recoverable",
         );
         Ok(())
@@ -522,9 +522,9 @@ mod tests {
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
-        ztest_ensure!(err.contains_external_error(), "expected the std::io::Error to be retained as a cause",);
+        ztest_ensure!(err.contains_source_error(), "expected the std::io::Error to be retained as a cause",);
         ztest_ensure!(
-            err.contains_code(&ErrorCode::for_external_type::<std::io::Error>()),
+            err.contains_code(&error_code_for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",
         );
         Ok(())
