@@ -92,7 +92,7 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::v
         }
 
         DataFormat::Unknown(suffix) => Err(zerror!(
-            Mf2rError::UnknownFormat { format: suffix },
+            Mf2rError::UnknownFormat { format: suffix.clone() },
             "unknown data format",
         )),
     }
