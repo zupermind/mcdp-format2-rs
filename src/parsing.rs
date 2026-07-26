@@ -69,7 +69,7 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::v
             let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
             let yaml_value: serde_yaml::Value =
-                zerror_from!(serde_yaml::from_str(decoded), Mf2rError::Yaml, "could not parse YAML",)?;
+                zerror_from!(serde_yaml::from_str(decoded), Mf2rError::CannotParseYamlDocument, "could not parse YAML",)?;
 
             // Convert serde_yaml::Value to ciborium::value::Value
             let cbor_value = yaml_to_cbor_value(yaml_value)?;
@@ -84,17 +84,15 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::v
             let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
             let json_value: serde_json::Value =
-                zerror_from!(serde_json::from_str(decoded), Mf2rError::Json, "could not parse JSON",)?;
+                zerror_from!(serde_json::from_str(decoded), Mf2rError::CannotParseJsonDocument, "could not parse JSON",)?;
 
             // Convert serde_json::Value to ciborium::value::Value
             let cbor_value = json_to_cbor_value(json_value)?;
             Ok(cbor_value)
         }
 
-        DataFormat::Unknown(_) => Err(zerror!(
-            Mf2rError::UnknownFormat {
-                format: format!("{:?}", format),
-            },
+        DataFormat::Unknown(suffix) => Err(zerror!(
+            Mf2rError::UnknownFormat { format: suffix },
             "unknown data format",
         )),
     }
@@ -109,11 +107,11 @@ fn decompress_gz(compressed: &[u8]) -> Result<Vec<u8>, std::io::Error> {
 
 fn read_file(path: &Path) -> ZResult<Vec<u8>, Mf2rError> {
     let mut file =
-        zerror_from_kv!(File::open(path), Mf2rError::ReadFile, "could not open file", path = path.display(),)?;
+        zerror_from_kv!(File::open(path), Mf2rError::CannotOpenFile, "could not open file", path = path.display(),)?;
     let mut contents = Vec::new();
     zerror_from_kv!(
         file.read_to_end(&mut contents),
-        Mf2rError::ReadFile,
+        Mf2rError::CannotReadFileContents,
         "could not read file",
         path = path.display(),
     )?;
@@ -131,14 +129,25 @@ pub fn list_paths(path: &Path, pattern: Pattern) -> ZResult<Vec<PathBuf>, Mf2rEr
 fn list_paths_recursive(path: &Path, pattern: Pattern, results: &mut Vec<PathBuf>) -> ZResult<(), Mf2rError> {
     if path.is_dir() {
         for entry in WalkDir::new(path).follow_links(true) {
-            // A traversal failure (symlink loop, permission denial, transient
-            // I/O) must fail the call rather than silently truncate the list.
-            let entry = zerror_from_kv!(
-                entry,
-                Mf2rError::WalkFailed,
-                "could not traverse directory tree",
-                path = path.display(),
-            )?;
+            // A traversal failure must fail the call rather than silently
+            // truncate the list. An ancestor loop is a malformed input tree and
+            // is classified as such; every other traversal failure (permission
+            // denial, vanished entry, transient I/O) stays unclassified.
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(error) if error.loop_ancestor().is_some() => zerror_from_kv!(
+                    Err(error),
+                    Mf2rError::DirectorySymlinkLoop,
+                    "directory tree contains a symlink loop",
+                    path = path.display(),
+                )?,
+                Err(error) => zerror_from_kv!(
+                    Err(error),
+                    Mf2rError::CannotReadDirectoryEntry,
+                    "could not read a directory entry while traversing",
+                    path = path.display(),
+                )?,
+            };
             let path = entry.path();
             if path.is_file()
                 && let Some(file_name) = path.file_name().and_then(OsStr::to_str)
@@ -324,8 +333,8 @@ mod tests {
         Ok(())
     }
 
-    /// A malformed YAML document produces `Mf2rError::Yaml` and retains the
-    /// concrete `serde_yaml::Error`.
+    /// A malformed YAML document produces `Mf2rError::CannotParseYamlDocument`
+    /// and retains the concrete `serde_yaml::Error`.
     #[test]
     fn bad_yaml_retains_serde_yaml_error() -> ZTestResult<()> {
         // Unterminated flow sequence: valid UTF-8, invalid YAML.
@@ -334,7 +343,7 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == Mf2rError::Yaml.code(),
+            err.primary_code() == Mf2rError::CannotParseYamlDocument.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
@@ -347,8 +356,8 @@ mod tests {
         Ok(())
     }
 
-    /// A malformed JSON document produces `Mf2rError::Json` and retains the
-    /// concrete `serde_json::Error`.
+    /// A malformed JSON document produces `Mf2rError::CannotParseJsonDocument`
+    /// and retains the concrete `serde_json::Error`.
     #[test]
     fn bad_json_retains_serde_json_error() -> ZTestResult<()> {
         let err = match parse_data(b"{ not valid json", DataFormat::JSON) {
@@ -356,7 +365,7 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == Mf2rError::Json.code(),
+            err.primary_code() == Mf2rError::CannotParseJsonDocument.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
@@ -449,8 +458,9 @@ mod tests {
         Ok(())
     }
 
-    /// A directory-traversal failure produces `Mf2rError::WalkFailed` with both
-    /// axes honestly `Unknown`, and retains the concrete `walkdir::Error`.
+    /// A symlink-loop traversal failure produces the caller-persistent
+    /// `Mf2rError::DirectorySymlinkLoop` and retains the concrete
+    /// `walkdir::Error`.
     ///
     /// The fixture is a self-referential symlink: under `follow_links(true)`,
     /// `WalkDir` detects the ancestor loop and yields a `walkdir::Error`, which
@@ -494,12 +504,12 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == Mf2rError::WalkFailed.code(),
+            err.primary_code() == Mf2rError::DirectorySymlinkLoop.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
-        ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
-        ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
+        ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
+        ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
             err.contains_code(&error_code_for_external_type::<walkdir::Error>()),
             "expected the concrete walkdir::Error to remain recoverable",
@@ -507,8 +517,9 @@ mod tests {
         Ok(())
     }
 
-    /// Reading a nonexistent path produces `Mf2rError::ReadFile` with both axes
-    /// honestly `Unknown`, and retains the concrete `std::io::Error`.
+    /// Reading a nonexistent path fails at `File::open`, so it produces
+    /// `Mf2rError::CannotOpenFile` with both axes honestly `Unknown`, and
+    /// retains the concrete `std::io::Error`.
     #[test]
     fn read_missing_path_is_read_failed_unknown_and_retains_io_error() -> ZTestResult<()> {
         let err = match read::<Root>(Path::new("/nonexistent/mcdp-format2-rs/definitely-does-not-exist.yaml.gz")) {
@@ -516,7 +527,7 @@ mod tests {
             Err(err) => err,
         };
         ztest_ensure!(
-            err.primary_code() == Mf2rError::ReadFile.code(),
+            err.primary_code() == Mf2rError::CannotOpenFile.code(),
             "unexpected primary code: {:?}",
             err.primary_code(),
         );
