@@ -17,10 +17,12 @@
 /// Failure modes for MCDP Format 2 loading, format detection, value
 /// conversion, and serialization.
 ///
-/// Codes are stable dotted hierarchy paths under the repo prefix `MF2R`, so
-/// downstream consumers can match on identity across Rust renames. The first
-/// segment is the repo prefix, the second groups the failing subsystem, and the
-/// leaf segment names the specific failure.
+/// Codes are derived by `ZErrorEnum` from the enum and variant identifiers, so
+/// `Mf2rError::CannotOpenFile` has code `Mf2rError.CannotOpenFile`. No variant
+/// declares an explicit `#[zerror(code = "...")]`: routine code overrides are a
+/// checklist violation (`ZERRORS2-NO-ROUTINE-CODE-OVERRIDES`), and a downstream
+/// consumer matching on identity should follow a variant rename rather than
+/// have the rename hidden behind a frozen string.
 #[derive(zuper_errors2::ZErrorEnum)]
 pub enum Mf2rError {
     /// A gzip-compressed payload could not be decompressed.
@@ -33,8 +35,7 @@ pub enum Mf2rError {
 
     /// A YAML document could not be parsed.
     #[zerror(locus = Caller, stability = Persistent)]
-    // Violation: ZERRORS2-NO-BROAD-BUCKET-KINDS:
-    Yaml,
+    CannotParseYamlDocument,
 
     /// A CBOR byte stream could not be decoded into a value.
     #[zerror(locus = Caller, stability = Persistent)]
@@ -42,14 +43,16 @@ pub enum Mf2rError {
 
     /// A JSON document could not be parsed.
     #[zerror(locus = Caller, stability = Persistent)]
-    // Violation: ZERRORS2-NO-BROAD-BUCKET-KINDS:
-    Json,
+    CannotParseJsonDocument,
 
     /// The file name did not correspond to a known data format.
     #[zerror(locus = Caller, stability = Persistent)]
     #[error("unknown data format: {format}")]
-    // Violation: ZERRORS2-NO-FREE-TEXT-KIND-PAYLOAD:
-    UnknownFormat { format: String },
+    UnknownFormat {
+        /// The unrecognized file-name suffix as supplied by the caller, not a
+        /// rendered form of the surrounding `DataFormat` value.
+        format: String,
+    },
 
     /// A JSON or YAML number had a type with no CBOR representation.
     ///
@@ -75,29 +78,45 @@ pub enum Mf2rError {
     #[zerror(locus = Caller, stability = Persistent)]
     DecodeTyped,
 
-    /// A file could not be opened or read.
+    /// A file could not be opened.
     ///
-    /// The single kind collapses `File::open` and `read_to_end` failures, which
-    /// span caller mistakes (missing path, bad path — persistent), environment
-    /// conditions (permissions — persistent), and transient device/interrupt
-    /// errors. No single locus or stability is true for the whole kind, so both
-    /// axes are left `Unknown` per the manual's rule (chapter 51) to classify
-    /// only when the kind itself determines the axis.
-    // Violation: ZERRORS2-NO-BROAD-BUCKET-KINDS:
-    ReadFile,
+    /// Raised by `File::open`. The failure spans caller mistakes (missing path,
+    /// bad path) and environment conditions (permission denial), so neither
+    /// axis is determined by the kind and both are left `Unknown` per the
+    /// manual's rule (chapter 51): classify only when the kind itself
+    /// determines the axis. The concrete `std::io::Error` is retained as a
+    /// cause, so a caller can recover `ErrorKind::NotFound` from
+    /// `PermissionDenied`.
+    CannotOpenFile,
 
-    /// A directory tree could not be traversed.
+    /// An opened file's contents could not be read to the end.
     ///
-    /// Wraps a `walkdir::Error` raised while walking a directory with
-    /// `WalkDir`. Such failures span symlink loops (under `follow_links(true)`),
-    /// permission denials on a subtree, and transient underlying I/O errors. As
-    /// with [`Mf2rError::ReadFile`], no single locus or stability is true for
-    /// the whole kind, so both axes are left `Unknown` per the manual's rule
-    /// (chapter 51): classify only when the kind itself determines the axis.
-    /// The concrete `walkdir::Error` is retained as a cause so a caller can
-    /// recover the failed path and underlying reason.
-    // Violation: ZERRORS2-NO-BROAD-BUCKET-KINDS:
-    WalkFailed,
+    /// Raised by `read_to_end` after `File::open` already succeeded, so it is
+    /// never a missing-path fault: it covers device errors, interrupted reads,
+    /// and a file truncated or removed underneath the open handle. Both axes
+    /// stay `Unknown` for the same reason as [`Mf2rError::CannotOpenFile`].
+    CannotReadFileContents,
+
+    /// A directory tree contains a symlink loop.
+    ///
+    /// Under `follow_links(true)`, `WalkDir` reports an ancestor loop rather
+    /// than recursing forever. The tree handed in is malformed for a following
+    /// traversal and will stay so until it is changed, which fixes both axes:
+    /// the fault is in the caller's input and it is persistent. The concrete
+    /// `walkdir::Error` is retained as a cause, so `loop_ancestor()` remains
+    /// recoverable.
+    #[zerror(locus = Caller, stability = Persistent)]
+    DirectorySymlinkLoop,
+
+    /// A directory entry could not be read while traversing a tree.
+    ///
+    /// The non-loop half of a `WalkDir` failure: permission denial on a
+    /// subtree, a vanished entry, or a transient underlying I/O error. No
+    /// single locus or stability is true for the whole kind, so both axes stay
+    /// `Unknown` per the manual's rule (chapter 51). The concrete
+    /// `walkdir::Error` is retained as a cause so a caller can recover the
+    /// failed path and underlying reason.
+    CannotReadDirectoryEntry,
 
     /// The supplied glob pattern was not valid.
     ///
