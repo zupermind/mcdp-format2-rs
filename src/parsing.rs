@@ -68,8 +68,11 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::v
         DataFormat::YAML | DataFormat::YAML_GZ => {
             let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
-            let yaml_value: serde_yaml::Value =
-                zerror_from!(serde_yaml::from_str(decoded), Mf2rError::CannotParseYamlDocument, "could not parse YAML",)?;
+            let yaml_value: serde_yaml::Value = zerror_from!(
+                serde_yaml::from_str(decoded),
+                Mf2rError::CannotParseYamlDocument,
+                "could not parse YAML",
+            )?;
 
             // Convert serde_yaml::Value to ciborium::value::Value
             let cbor_value = yaml_to_cbor_value(yaml_value)?;
@@ -83,18 +86,20 @@ fn interpret_cvalue(contents: &[u8], format: &DataFormat) -> ZResult<ciborium::v
         DataFormat::JSON | DataFormat::JSON_GZ => {
             let decoded = zerror_from!(core::str::from_utf8(&contents), Mf2rError::Utf8, "input is not valid UTF-8",)?;
 
-            let json_value: serde_json::Value =
-                zerror_from!(serde_json::from_str(decoded), Mf2rError::CannotParseJsonDocument, "could not parse JSON",)?;
+            let json_value: serde_json::Value = zerror_from!(
+                serde_json::from_str(decoded),
+                Mf2rError::CannotParseJsonDocument,
+                "could not parse JSON",
+            )?;
 
             // Convert serde_json::Value to ciborium::value::Value
             let cbor_value = json_to_cbor_value(json_value)?;
             Ok(cbor_value)
         }
 
-        DataFormat::Unknown(suffix) => Err(zerror!(
-            Mf2rError::UnknownFormat { format: suffix.clone() },
-            "unknown data format",
-        )),
+        DataFormat::Unknown(suffix) => {
+            Err(zerror!(Mf2rError::UnknownFormat { format: suffix.clone() }, "unknown data format",))
+        }
     }
 }
 
