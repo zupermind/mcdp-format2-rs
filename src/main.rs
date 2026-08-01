@@ -1,4 +1,3 @@
-use clap::Parser;
 use glob::Pattern;
 use mcdp_format2_rs::Mf2rError;
 use mcdp_format2_rs::Root;
@@ -14,48 +13,27 @@ struct Config {
     pub verbose: bool,
 }
 
-#[derive(Parser)]
-#[command(author, version, about = "MCDP file parser")]
-struct Cli {
-    /// Files or directories to process
-    #[arg(required = true)]
-    paths: Vec<PathBuf>,
-
-    /// File pattern to match (e.g. "*.yaml")
-    #[arg(short, long, default_value = "*.mcdp2.*")]
-    pattern: String,
-
-    /// Show verbose output
-    #[arg(short, long)]
-    verbose: bool,
-}
 /// Build the runtime [`Config`] from parsed CLI arguments.
 ///
-/// Split out from [`parse_args`] so the glob-pattern validation path (which
-/// mints [`Mf2rError::InvalidPattern`]) is reachable from a test without
-/// touching the real process argv.
-fn build_config(cli: Cli) -> ZResult<Config, Mf2rError> {
-    let pattern = zerror_from_kv!(
-        Pattern::new(&cli.pattern),
+/// Split out so the glob-pattern validation path (which mints
+/// [`Mf2rError::InvalidPattern`]) is reachable from a unit test.
+fn build_config(paths: Vec<PathBuf>, pattern: &str, verbose: bool) -> ZResult<Config, Mf2rError> {
+    let parsed_pattern = zerror_from_kv!(
+        Pattern::new(&pattern),
         Mf2rError::InvalidPattern,
         "invalid pattern",
-        pattern = &cli.pattern,
+        pattern = &pattern,
     )?;
 
     Ok(Config {
-        pattern,
-        paths: cli.paths,
-        verbose: cli.verbose,
+        pattern: parsed_pattern,
+        paths,
+        verbose,
     })
 }
 
-fn parse_args() -> ZResult<Config, Mf2rError> {
-    build_config(Cli::parse())
-}
-
-#[zuper_errors2::zerror_main]
-fn main() -> ZResult<(), Mf2rError> {
-    let config = parse_args()?;
+fn load(paths: Vec<PathBuf>, pattern: &str, verbose: bool) -> ZResult<(), Mf2rError> {
+    let config = build_config(paths, pattern, verbose)?;
 
     if config.verbose {
         println!("Using pattern: {}", config.pattern.as_str());
@@ -80,6 +58,20 @@ fn main() -> ZResult<(), Mf2rError> {
     Ok(())
 }
 
+async fn load_command(
+    _invocation: &dyn zuper_cli::InvocationTrait, paths: Vec<PathBuf>, pattern: String, verbose: bool,
+) -> zuper_cli::CliResult<zuper_cli::RunOutcome> {
+    zuper_errors2::zerror_because!(
+        load(paths, &pattern, verbose),
+        zuper_cli::CliError::DomainError,
+        "could not load the selected MCDP files",
+    )?;
+    Ok(zuper_cli::RunOutcome::success(""))
+}
+
+include!(concat!(env!("OUT_DIR"), "/zx_component.rs"));
+include!(concat!(env!("OUT_DIR"), "/zx_main.rs"));
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,15 +86,9 @@ mod tests {
     #[test]
     fn invalid_glob_pattern_is_cli_invalid_pattern() -> ZTestResult<()> {
         // `a**b` embeds a recursive wildcard that does not form its own path
-        // component, which `glob::Pattern::new` rejects. clap accepts it as a
-        // plain string argument.
-        let cli = match Cli::try_parse_from(["mcdp-format2-rs-load", "some-path", "--pattern", "a**b"]) {
-            Ok(cli) => cli,
-            Err(e) => ztest_bail!("clap should accept the raw args; got {e}"),
-        };
-        let err = match build_config(cli) {
-            Ok(_) => ztest_bail!("expected an invalid glob pattern to fail"),
-            Err(err) => err,
+        // component, which `glob::Pattern::new` rejects.
+        let Err(err) = build_config(vec![PathBuf::from("some-path")], "a**b", false) else {
+            ztest_bail!("expected an invalid glob pattern to fail")
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::InvalidPattern.code(),
