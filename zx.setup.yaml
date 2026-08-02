@@ -1,0 +1,44 @@
+rust:
+  program: mcdp-format2-rs-load
+  package: mcdp-format2-rs
+  rust_entry_point: crate::generated_zx_component
+globals: []
+commands:
+  - path: []
+    aliases: []
+    kind: command
+    handler: crate::load_command
+    help: "MCDP file parser"
+    help_long: null
+    options:
+      - id: pattern
+        long: pattern
+        short: p
+        kind: value
+        multiple: false
+        global: false
+        value_name: PATTERN
+        type: String
+        default: "*.mcdp2.*"
+        env: null
+        help: "File pattern to match (e.g. \"*.yaml\")"
+      - id: verbose
+        long: verbose
+        short: v
+        kind: flag
+        multiple: false
+        global: false
+        value_name: null
+        default: null
+        env: null
+        help: "Show verbose output"
+    positionals:
+      - id: paths
+        type: "std::path::PathBuf"
+        arity: many
+        required: true
+        raw: false
+        after_separator: false
+        default: null
+        help: "Files or directories to process"
+mounts: []

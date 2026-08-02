@@ -3,7 +3,7 @@ name = "mcdp-format2-rs"
 publish = true
 version = "2.22.0"
 edition = "2024"
-include = ["src/**/*", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src/**/*", "build.rs", "zx.setup.yaml", "Cargo.toml", "LICENSE", "README.md"]
 description = "A Rust library for loading and saving datasets in the MCDP V2 format."
 repository = "https://github.com/zupermind/mcdp-format2-rs"
 license = "Apache-2.0 OR MIT"
@@ -246,15 +246,20 @@ let_and_return = "allow"
 
 [dependencies]
 ciborium = { version = "0.2.2", default-features = false,  features = ["default"]}
-clap = { version = "4.5", features = ["derive", "help", "std", "color", "usage", "error-context", "suggestions"], default-features = false }
 flate2 = { version = "1.1.2", features = ["rust_backend"], default-features = false }
 glob = { version = "0.3", default-features = false }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = { version = "1.0", features = ["preserve_order", "std"], default-features = false }
 serde_yaml = { version = "0.9.34", default-features = false }
+tokio = { version = "1", features = ["macros", "rt"], default-features = false }
 walkdir = { version = "2", default-features = false }
+zuper-cli = { version = ">=8.0.2607231319, <9", default-features = false, registry = "zuper-registry" }
 zuper-errors2 = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
 zuper-errors2-elab = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
+
+[build-dependencies]
+zuper-cli = { version = ">=8.0.2607231319, <9", default-features = false, features = ["build-support"], registry = "zuper-registry" }
+zuper-errors2 = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
 
 
 [lib]
@@ -295,6 +300,6 @@ debug         = "line-tables-only"
 [patch]
 
 [patch.zuper-registry]
+zuper-cli = { path = "../../10-common/zuper-cli-interface/crates/zuper-cli" }
 zuper-errors2 = { path = "../../10-common/zuper-errors2/crates/zuper-errors2" }
 zuper-errors2-elab = { path = "../../10-common/zuper-errors2/crates/zuper-errors2-elab" }
-
