@@ -253,12 +253,12 @@ serde_json = { version = "1.0", features = ["preserve_order", "std"], default-fe
 serde_yaml = { version = "0.9.34", default-features = false }
 tokio = { version = "1", features = ["macros", "rt"], default-features = false }
 walkdir = { version = "2", default-features = false }
-zuper-cli = { version = ">=8.0.2607231319, <9", default-features = false, registry = "zuper-registry" }
+zuper-cli = { version = ">=8.0.2608031051, <9", default-features = false, registry = "zuper-registry" }
 zuper-errors2 = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
 zuper-errors2-elab = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
 
 [build-dependencies]
-zuper-cli = { version = ">=8.0.2607231319, <9", default-features = false, features = ["build-support"], registry = "zuper-registry" }
+zuper-cli = { version = ">=8.0.2608031051, <9", default-features = false, features = ["build-support"], registry = "zuper-registry" }
 zuper-errors2 = { version = ">=8.0.2607251120, <9", default-features = false, registry = "zuper-registry" }
 
 
