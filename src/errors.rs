@@ -124,4 +124,25 @@ pub enum Mf2rError {
     /// user-supplied string before the library ever sees it.
     #[zerror(locus = Caller, stability = Persistent)]
     InvalidPattern,
+
+    /// Fewer documents matched the invocation than it declared it needed.
+    ///
+    /// A binary (CLI) concern, and the kind that keeps a run from passing
+    /// vacuously. Walking a tree that holds no matching document is not an
+    /// error to the traversal itself — `list_paths` legitimately returns an
+    /// empty list — so without this kind the processing loop's body never runs
+    /// and `main` returns `Ok(())`: a corpus path that no longer exists, an
+    /// unfetched Git-LFS payload, or a `--pattern` that no longer matches the
+    /// corpus naming all report success having read nothing. `--min-files`
+    /// turns the expected corpus size into a checked precondition, and this
+    /// kind is how the check fails.
+    ///
+    /// The shortfall is the caller's: the roots, the pattern, or the minimum
+    /// were wrong, and re-running the same invocation against the same tree
+    /// keeps producing the same count. The matched count, the required
+    /// minimum, the pattern, and the search roots ride along as annotation
+    /// attributes so the report says which corpus came up short and by how
+    /// much.
+    #[zerror(locus = Caller, stability = Persistent)]
+    TooFewFiles,
 }

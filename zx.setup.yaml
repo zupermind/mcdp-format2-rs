@@ -32,6 +32,17 @@ commands:
         default: null
         env: null
         help: "Show verbose output"
+      - id: min_files
+        long: min-files
+        short: null
+        kind: value
+        multiple: false
+        global: false
+        value_name: MIN_FILES
+        type: "std::num::NonZeroUsize"
+        default: "1"
+        env: null
+        help: "Fail unless at least this many files match"
     positionals:
       - id: paths
         type: "std::path::PathBuf"

@@ -50,7 +50,17 @@ mcdp-format2-rs-load -p "*.mcdp2.json" /path/to/files
 
 # Verbose output
 mcdp-format2-rs-load -v /path/to/files
+
+# Require a corpus of at least the expected size
+mcdp-format2-rs-load --min-files 100 /path/to/files
 ```
+
+Matching no file is a failure, not a success: a path that does not exist, an
+unfetched Git-LFS payload, or a pattern that no longer matches the corpus
+naming would otherwise report a clean exit having read nothing. `--min-files`
+defaults to 1 for that reason, and callers who know how large the corpus should
+be pass its expected size so that a corpus which shrank is caught too. Values
+below 1 are rejected.
 
 ## Supported File Formats
 

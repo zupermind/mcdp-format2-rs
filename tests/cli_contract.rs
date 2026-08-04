@@ -19,7 +19,7 @@ fn generated_cli_preserves_the_loader_contract() -> TestResult {
         return Err(format!("--help failed: {}", _utf8(help.stderr)?).into());
     }
     let help_stdout = _utf8(help.stdout)?;
-    for expected in ["MCDP file parser", "Usage:", "--pattern", "--verbose", "<paths>..."] {
+    for expected in ["MCDP file parser", "Usage:", "--pattern", "--verbose", "--min-files", "<paths>..."] {
         if !help_stdout.contains(expected) {
             return Err(format!("help does not contain {expected:?}:\n{help_stdout}").into());
         }
@@ -44,6 +44,11 @@ fn generated_cli_preserves_the_loader_contract() -> TestResult {
     let missing = _run(&[])?;
     if missing.status.code() != Some(2) {
         return Err(format!("missing paths should exit 2, got {}", missing.status).into());
+    }
+
+    let zero_minimum = _run(&["some-path", "--min-files", "0"])?;
+    if zero_minimum.status.code() != Some(2) {
+        return Err(format!("a zero minimum should exit 2, got {}", zero_minimum.status).into());
     }
 
     let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
