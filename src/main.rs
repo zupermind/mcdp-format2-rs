@@ -20,12 +20,8 @@ struct Config {
 /// Split out so the glob-pattern validation path (which mints
 /// [`Mf2rError::InvalidPattern`]) is reachable from a unit test.
 fn build_config(paths: Vec<PathBuf>, pattern: &str, verbose: bool, min_files: usize) -> ZResult<Config, Mf2rError> {
-    let parsed_pattern = zerror_from_kv!(
-        Pattern::new(&pattern),
-        Mf2rError::InvalidPattern,
-        "invalid pattern",
-        pattern = &pattern,
-    )?;
+    let parsed_pattern =
+        zerror_from_kv!(Pattern::new(&pattern), Mf2rError::InvalidPattern, "invalid pattern", pattern = &pattern,)?;
 
     Ok(Config {
         pattern: parsed_pattern,
@@ -46,7 +42,12 @@ fn check_min_files(matched: &[PathBuf], config: &Config) -> ZResult<(), Mf2rErro
         return Ok(());
     }
 
-    let roots = config.paths.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ");
+    let roots = config
+        .paths
+        .iter()
+        .map(|p| p.display().to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
     zerror_err!(
         Mf2rError::TooFewFiles,
         "fewer files matched than the invocation requires",
@@ -86,7 +87,10 @@ fn load(paths: Vec<PathBuf>, pattern: &str, verbose: bool, min_files: usize) -> 
 }
 
 async fn load_command(
-    _invocation: &dyn zuper_cli::InvocationTrait, paths: Vec<PathBuf>, pattern: String, verbose: bool,
+    _invocation: &dyn zuper_cli::InvocationTrait,
+    paths: Vec<PathBuf>,
+    pattern: String,
+    verbose: bool,
     min_files: std::num::NonZeroUsize,
 ) -> zuper_cli::CliResult<zuper_cli::RunOutcome> {
     zuper_errors2::zerror_because!(

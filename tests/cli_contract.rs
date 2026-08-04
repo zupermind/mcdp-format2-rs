@@ -10,7 +10,9 @@ fn _run(arguments: &[&str]) -> Result<std::process::Output, Box<dyn Error + Send
         .output()?)
 }
 
-fn _utf8(bytes: Vec<u8>) -> Result<String, Box<dyn Error + Send + Sync>> { Ok(String::from_utf8(bytes)?) }
+fn _utf8(bytes: Vec<u8>) -> Result<String, Box<dyn Error + Send + Sync>> {
+    Ok(String::from_utf8(bytes)?)
+}
 
 #[test]
 fn generated_cli_preserves_the_loader_contract() -> TestResult {
@@ -19,7 +21,14 @@ fn generated_cli_preserves_the_loader_contract() -> TestResult {
         return Err(format!("--help failed: {}", _utf8(help.stderr)?).into());
     }
     let help_stdout = _utf8(help.stdout)?;
-    for expected in ["MCDP file parser", "Usage:", "--pattern", "--verbose", "--min-files", "<paths>..."] {
+    for expected in [
+        "MCDP file parser",
+        "Usage:",
+        "--pattern",
+        "--verbose",
+        "--min-files",
+        "<paths>...",
+    ] {
         if !help_stdout.contains(expected) {
             return Err(format!("help does not contain {expected:?}:\n{help_stdout}").into());
         }
@@ -51,8 +60,8 @@ fn generated_cli_preserves_the_loader_contract() -> TestResult {
         return Err(format!("a zero minimum should exit 2, got {}", zero_minimum.status).into());
     }
 
-    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("examples/basic_scalar_ops/models/ceil.dp.mcdp2.yaml.gz");
+    let fixture =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/basic_scalar_ops/models/ceil.dp.mcdp2.yaml.gz");
     let fixture = fixture
         .to_str()
         .ok_or_else(|| format!("fixture path is not UTF-8: {}", fixture.display()))?;
