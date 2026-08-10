@@ -98,7 +98,7 @@ async fn load_command(
         zuper_cli::CliError::DomainError,
         "could not load the selected MCDP files",
     )?;
-    Ok(zuper_cli::RunOutcome::success(""))
+    Ok(zuper_cli::RunOutcome::completed_success())
 }
 
 include!(concat!(env!("OUT_DIR"), "/zx_component.rs"));
