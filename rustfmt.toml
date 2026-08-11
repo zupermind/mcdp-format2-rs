@@ -1,8 +1,29 @@
 imports_granularity = "Item"
-# Keep the function-call width within rustfmt's configured line width.
-max_width = 120
-fn_call_width = 120
-# blank_lines_upper_bound = 2
-# blank_lines_lower_bound = 1
 
-# sigil 5fc42114efd80a49133d24cc2a3c5720
+# Rustfmt configuration
+
+# Increase line width to prevent breaking function calls
+max_width = 120
+
+# Don't break function calls if they fit on one line
+fn_call_width = 120
+
+# Keep single-line function calls on one line
+fn_single_line = true
+
+# Don't force function arguments to be on separate lines
+force_multiline_blocks = false
+
+# Allow longer chains before breaking
+chain_width = 100
+
+# Don't break method chains if they fit
+single_line_if_else_max_width = 100
+
+# Keep struct literals on one line if they fit
+struct_lit_single_line = true
+
+# Allow function parameters on one line
+fn_params_layout = "Compressed"
+
+# sigil 26c7ffe362693b8990d5ee3c57b18c6f
