@@ -8,8 +8,8 @@ max_width = 120
 # Don't break function calls if they fit on one line
 fn_call_width = 120
 
-# Keep single-line function calls on one line
-fn_single_line = true
+# Do not force function bodies onto one line
+fn_single_line = false
 
 # Don't force function arguments to be on separate lines
 force_multiline_blocks = false
@@ -26,4 +26,4 @@ struct_lit_single_line = true
 # Allow function parameters on one line
 fn_params_layout = "Compressed"
 
-# sigil 26c7ffe362693b8990d5ee3c57b18c6f
+# sigil 1ecaf8486aa86dcb194798544414758f
