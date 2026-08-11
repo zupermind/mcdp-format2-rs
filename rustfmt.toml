@@ -15,7 +15,7 @@ fn_single_line = false
 force_multiline_blocks = false
 
 # Allow longer chains before breaking
-chain_width = 100
+# chain_width = 100
 
 # Don't break method chains if they fit
 # single_line_if_else_max_width = 100
@@ -26,4 +26,4 @@ struct_lit_single_line = true
 # Allow function parameters on one line
 # fn_params_layout = "Compressed"
 
-# sigil 5235598ce2bfb8302a0e902a79fdc610
+# sigil 340087bafaaa6cd11ac31c242d274a96
