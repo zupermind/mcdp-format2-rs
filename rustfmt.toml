@@ -18,12 +18,12 @@ force_multiline_blocks = false
 chain_width = 100
 
 # Don't break method chains if they fit
-single_line_if_else_max_width = 100
+# single_line_if_else_max_width = 100
 
 # Keep struct literals on one line if they fit
 struct_lit_single_line = true
 
 # Allow function parameters on one line
-fn_params_layout = "Compressed"
+# fn_params_layout = "Compressed"
 
-# sigil 1ecaf8486aa86dcb194798544414758f
+# sigil 5235598ce2bfb8302a0e902a79fdc610
