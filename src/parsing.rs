@@ -308,8 +308,7 @@ mod tests {
                     format: "x.bin".to_owned(),
                 }
                 .code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::UnknownFormat",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -324,11 +323,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected invalid UTF-8 to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::Utf8.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
-        );
+        ztest_ensure!(err.primary_code() == Mf2rError::Utf8.code(), "expected primary code Mf2rError::Utf8",);
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -349,8 +344,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::CannotParseYamlDocument.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::CannotParseYamlDocument",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -371,8 +365,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::CannotParseJsonDocument.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::CannotParseJsonDocument",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -396,11 +389,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected malformed CBOR to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::Cbor.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
-        );
+        ztest_ensure!(err.primary_code() == Mf2rError::Cbor.code(), "expected primary code Mf2rError::Cbor",);
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -425,8 +414,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::Decompress.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::Decompress",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -451,8 +439,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::DecodeTyped.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::DecodeTyped",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -510,8 +497,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::DirectorySymlinkLoop.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::DirectorySymlinkLoop",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -533,8 +519,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::CannotOpenFile.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::CannotOpenFile",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);

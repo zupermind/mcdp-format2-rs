@@ -124,8 +124,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::InvalidPattern.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::InvalidPattern",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -156,8 +155,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::TooFewFiles.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::TooFewFiles",
         );
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
@@ -177,8 +175,7 @@ mod tests {
         };
         ztest_ensure!(
             err.primary_code() == Mf2rError::TooFewFiles.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
+            "expected primary code Mf2rError::TooFewFiles",
         );
         Ok(())
     }
