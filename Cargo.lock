@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "mcdp-format2-rs"
-version = "2.22.0"
+version = "2.22.2901010000"
 dependencies = [
  "ciborium",
  "datatest-stable",
