@@ -302,14 +302,12 @@ mod tests {
             Ok(_) => ztest_bail!("expected unknown-format to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code()
-                == Mf2rError::UnknownFormat {
-                    format: "x.bin".to_owned(),
-                }
-                .code(),
-            "expected primary code Mf2rError::UnknownFormat",
-        );
+        err.report().assert_primary_code(
+            &Mf2rError::UnknownFormat {
+                format: "x.bin".to_owned(),
+            }
+            .code(),
+        )?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         Ok(())
@@ -323,7 +321,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected invalid UTF-8 to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(err.primary_code() == Mf2rError::Utf8.code(), "expected primary code Mf2rError::Utf8",);
+        err.report().assert_primary_code(&Mf2rError::Utf8.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -342,10 +340,8 @@ mod tests {
             Ok(_) => ztest_bail!("expected malformed YAML to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::CannotParseYamlDocument.code(),
-            "expected primary code Mf2rError::CannotParseYamlDocument",
-        );
+        err.report()
+            .assert_primary_code(&Mf2rError::CannotParseYamlDocument.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -363,10 +359,8 @@ mod tests {
             Ok(_) => ztest_bail!("expected malformed JSON to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::CannotParseJsonDocument.code(),
-            "expected primary code Mf2rError::CannotParseJsonDocument",
-        );
+        err.report()
+            .assert_primary_code(&Mf2rError::CannotParseJsonDocument.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -389,7 +383,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected malformed CBOR to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(err.primary_code() == Mf2rError::Cbor.code(), "expected primary code Mf2rError::Cbor",);
+        err.report().assert_primary_code(&Mf2rError::Cbor.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -412,10 +406,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected corrupt gzip to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::Decompress.code(),
-            "expected primary code Mf2rError::Decompress",
-        );
+        err.report().assert_primary_code(&Mf2rError::Decompress.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -437,10 +428,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected typed decode of a text value into u32 to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::DecodeTyped.code(),
-            "expected primary code Mf2rError::DecodeTyped",
-        );
+        err.report().assert_primary_code(&Mf2rError::DecodeTyped.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -495,10 +483,8 @@ mod tests {
             Ok(_) => ztest_bail!("expected a symlink-loop traversal to fail"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::DirectorySymlinkLoop.code(),
-            "expected primary code Mf2rError::DirectorySymlinkLoop",
-        );
+        err.report()
+            .assert_primary_code(&Mf2rError::DirectorySymlinkLoop.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -517,10 +503,7 @@ mod tests {
             Ok(_) => ztest_bail!("expected read to fail for a nonexistent path"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::CannotOpenFile.code(),
-            "expected primary code Mf2rError::CannotOpenFile",
-        );
+        err.report().assert_primary_code(&Mf2rError::CannotOpenFile.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Unknown);
         ztest_ensure!(err.primary_stability() == ErrorStability::Unknown);
         ztest_ensure!(err.contains_source_error(), "expected the std::io::Error to be retained as a cause",);
