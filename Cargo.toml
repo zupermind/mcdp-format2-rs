@@ -1,7 +1,7 @@
 [package]
 name = "mcdp-format2-rs"
 publish = true
-version = "2.22.2901010000"
+version = "3.0.2901010000"
 edition = "2024"
 include = ["src/**/*", "build.rs", "zx.setup.yaml", "Cargo.toml", "LICENSE", "README.md"]
 description = "A Rust library for loading and saving datasets in the MCDP V2 format."
@@ -253,13 +253,13 @@ serde_json = { version = "1.0", features = ["preserve_order", "std"], default-fe
 serde_yaml = { version = "0.9.34", default-features = false }
 tokio = { version = "1", features = ["macros", "rt"], default-features = false }
 walkdir = { version = "2", default-features = false }
-zuper-cli = { version = "^8.1.2608142244", default-features = false, registry = "zuper-registry" }
-zuper-errors2 = { version = "^8.0.2608142135", default-features = false, registry = "zuper-registry" }
-zuper-errors2-elab = { version = "^8.0.2608142135", default-features = false, registry = "zuper-registry" }
+zuper-cli = { version = "^9", default-features = false, registry = "zuper-registry" }
+zuper-errors2 = { version = "^9", default-features = false, registry = "zuper-registry" }
+zuper-errors2-elab = { version = "^9", default-features = false, registry = "zuper-registry" }
 
 [build-dependencies]
-zuper-cli = { version = "^8.1.2608142244", default-features = false, features = ["build-support"], registry = "zuper-registry" }
-zuper-errors2 = { version = "^8.0.2608142135", default-features = false, registry = "zuper-registry" }
+zuper-cli = { version = "^9", default-features = false, features = ["build-support"], registry = "zuper-registry" }
+zuper-errors2 = { version = "^9", default-features = false, registry = "zuper-registry" }
 
 
 [lib]
@@ -300,6 +300,6 @@ debug         = "line-tables-only"
 [patch]
 
 [patch.zuper-registry]
-zuper-cli = { path = "../../10-common/zuper-cli-interface/crates/zuper-cli" }
-zuper-errors2 = { path = "../../10-common/zuper-errors2/crates/zuper-errors2" }
-zuper-errors2-elab = { path = "../../10-common/zuper-errors2/crates/zuper-errors2-elab" }
+zuper-cli = { path = "../../10-common/zuper-cli-interface.worktree.MISSING-TASK.z7-stage-lupa-2608-MISSING-TASK-errors-v9-transition/crates/zuper-cli" }
+zuper-errors2 = { path = "../../10-common/zuper-errors2.worktree.MISSING-TASK.z7-stage-lupa-2608-MISSING-TASK-errorcode-formatting/crates/zuper-errors2" }
+zuper-errors2-elab = { path = "../../10-common/zuper-errors2.worktree.MISSING-TASK.z7-stage-lupa-2608-MISSING-TASK-errorcode-formatting/crates/zuper-errors2-elab" }

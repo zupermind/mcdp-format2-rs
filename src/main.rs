@@ -122,11 +122,7 @@ mod tests {
         let Err(err) = build_config(vec![PathBuf::from("some-path")], "a**b", false, 1) else {
             ztest_bail!("expected an invalid glob pattern to fail")
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::InvalidPattern.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
-        );
+        err.report().assert_primary_code(&Mf2rError::InvalidPattern.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         ztest_ensure!(
@@ -154,11 +150,7 @@ mod tests {
             Ok(()) => ztest_bail!("expected 2 matched files to fall short of a minimum of 100"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::TooFewFiles.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
-        );
+        err.report().assert_primary_code(&Mf2rError::TooFewFiles.code())?;
         ztest_ensure!(err.primary_locus() == ErrorLocus::Caller);
         ztest_ensure!(err.primary_stability() == ErrorStability::Persistent);
         Ok(())
@@ -175,11 +167,7 @@ mod tests {
             Ok(()) => ztest_bail!("expected an empty match to fail under the default minimum"),
             Err(err) => err,
         };
-        ztest_ensure!(
-            err.primary_code() == Mf2rError::TooFewFiles.code(),
-            "unexpected primary code: {:?}",
-            err.primary_code(),
-        );
+        err.report().assert_primary_code(&Mf2rError::TooFewFiles.code())?;
         Ok(())
     }
 

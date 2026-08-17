@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "mcdp-format2-rs"
-version = "2.22.2901010000"
+version = "3.0.2901010000"
 dependencies = [
  "ciborium",
  "datatest-stable",
@@ -591,6 +591,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,7 +754,7 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "8.1.2901010000"
+version = "9.0.2901010000"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -764,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "8.1.2901010000"
+version = "9.0.2901010000"
 dependencies = [
  "serde",
  "serde_json",
@@ -772,17 +778,19 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "8.0.2901010000"
+version = "9.0.2901010000"
 dependencies = [
  "colored",
  "indexmap",
  "serde",
+ "serde_json",
+ "static_assertions",
  "zuper-errors2-derive",
 ]
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "8.0.2901010000"
+version = "9.0.2901010000"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -791,7 +799,7 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "8.0.2901010000"
+version = "9.0.2901010000"
 dependencies = [
  "indexmap",
  "zuper-errors2",
