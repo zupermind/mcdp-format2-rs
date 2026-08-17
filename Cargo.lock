@@ -783,6 +783,7 @@ dependencies = [
  "colored",
  "indexmap",
  "serde",
+ "serde_json",
  "static_assertions",
  "zuper-errors2-derive",
 ]
