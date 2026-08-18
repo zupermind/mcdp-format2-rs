@@ -296,10 +296,3 @@ debug         = "line-tables-only"
 lto           = "thin"       # never "fat" — merges all IR into one module → OOM
 # codegen-units = 16           # keep high; =1 is the memory anti-pattern
 debug         = "line-tables-only"
-
-[patch]
-
-[patch.zuper-registry]
-zuper-cli = { path = "../../10-common/zuper-cli-interface/crates/zuper-cli" }
-zuper-errors2 = { path = "../../10-common/zuper-errors2/crates/zuper-errors2" }
-zuper-errors2-elab = { path = "../../10-common/zuper-errors2/crates/zuper-errors2-elab" }

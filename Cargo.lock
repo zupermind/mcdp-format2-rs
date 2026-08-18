@@ -754,7 +754,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "9.0.2901010000"
+version = "9.0.2608172337"
+source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
+checksum = "c73ff99d806126fe8f790c619c8abeb5fd372fec67007c23fcffa0d2949e4324"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -770,7 +772,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.0.2901010000"
+version = "9.0.2608172337"
+source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
+checksum = "05b0ba8558a97b6234587d7cfda28a9bc5e6d1291fb694e7a611cb791b97a0c5"
 dependencies = [
  "serde",
  "serde_json",
@@ -778,7 +782,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.0.2901010000"
+version = "9.0.2608171354"
+source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
+checksum = "8c6436cb61618a716de2408bbce3d308a7acf506195c6afd2ffc8190b6651fc9"
 dependencies = [
  "colored",
  "indexmap",
@@ -790,7 +796,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.0.2901010000"
+version = "9.0.2608171354"
+source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
+checksum = "c698ae739c7dc43fb34782f94c52fe270d6585a069dd04243f757e40b88d2575"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -799,7 +807,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.0.2901010000"
+version = "9.0.2608171354"
+source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
+checksum = "2a674f7a17e94eed21e6d7075dbd2e73b0b6e1cbae3eae747c25cea0fc602c58"
 dependencies = [
  "indexmap",
  "zuper-errors2",
