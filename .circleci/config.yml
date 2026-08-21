@@ -4,6 +4,45 @@ parameters:
     type: string
     default: z7-stage
 workflows:
+  install:
+    jobs:
+    - install-linux:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          branches:
+            only:
+            - z7-stage
+            - z7-prod
+            - z7-stage-lupa
+          tags:
+            ignore: /.*/
+    - install-osx:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          branches:
+            only:
+            - z7-stage
+            - z7-prod
+            - z7-stage-lupa
+          tags:
+            ignore: /.*/
+    - install-win:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          branches:
+            only:
+            - z7-stage
+            - z7-prod
+            - z7-stage-lupa
+          tags:
+            ignore: /.*/
+  fresh:
+    jobs:
+    - lint-fresh:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
   test:
     jobs:
     - test1:
@@ -21,13 +60,6 @@ workflows:
         filters:
           tags:
             ignore: /.*/
-    - install:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-        requires:
-        - test1
 orbs:
   codecov: codecov/codecov@6
 jobs:
@@ -38,7 +70,7 @@ jobs:
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: zuper-ci-ns/r1
+    resource_class: small.gen2
     steps:
     - checkout
     - run:
@@ -59,7 +91,44 @@ jobs:
           zuper-rs-lint --version
     - run:
         name: Generate zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED
+    - store_test_results:
+        path: out/test-results
+    - store_artifacts:
+        path: out/zuper-rs-lint
+        destination: zuper-rs-lint
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  lint-fresh:
+    environment:
+      CARGO_HOME: /root/.cargo
+      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
+      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    resource_class: small.gen2
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: |
+          eval "$(ssh-agent -s)"
+          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
+          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          zuper-rs-lint --version
+    - run:
+        name: Generate fresh zuper-rs-lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only RUST-CARGO-LOCK-ZUPER-ADVANCED
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -130,7 +199,13 @@ jobs:
         destination: build-stats
     - run:
         name: pre-circle-tests
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make pre-circle-tests
+        command: |
+          TARGET=pre-circle-tests
+          if make -n $TARGET ; then
+              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make pre-circle-tests
+          else
+              echo "Target $TARGET not defined"
+          fi
     - run:
         name: Compile and archive coverage tests
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
@@ -145,6 +220,16 @@ jobs:
         when: always
         command: |
           cp target/nextest/ci/junit.xml out/test-results/report-${CIRCLE_NODE_INDEX}.xml || true
+    - run:
+        name: post-circle-tests
+        when: always
+        command: |
+          TARGET=post-circle-tests
+          if make -n $TARGET ; then
+              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/post-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make post-circle-tests
+          else
+              echo "Target $TARGET not defined"
+          fi
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -156,12 +241,12 @@ jobs:
     - codecov/upload:
         when: always
     resource_class: zuper-ci-ns/r4
-  install:
+  install-linux:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: zuper-ci-ns/r4
+    resource_class: zuper-ci-ns/r1
     steps:
     - checkout
     - run:
@@ -185,10 +270,86 @@ jobs:
         name: Install binaries
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
     - store_artifacts:
+        path: /root/.cargo/bin
+        destination: bin
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  install-osx:
+    environment:
+      CARGO_HOME: /Users/circleci/.cargo
+    machine: true
+    resource_class: zuper-ci-ns/m4-nolimits
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: |
+          eval "$(ssh-agent -s)"
+          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
+          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          cargo --version
+          make --version
+    - run:
+        name: Install binaries
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
+    - store_artifacts:
+        path: /Users/circleci/.cargo/bin
+        destination: bin
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  install-win:
+    environment:
+      CARGO_HOME: C:\Users\circleci\.cargo
+    machine: true
+    resource_class: zuper-ci-ns/windows
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        shell: powershell.exe -ExecutionPolicy Bypass
+        command: |
+          $keyPath = Join-Path $env:TEMP "zuper-deploy-key"
+          [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:ZUPER_UTILS_BUILD_DEPLOY_KEY_B64))
+          Start-Service ssh-agent
+          ssh-add $keyPath
+          $env:GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=accept-new"
+          git submodule update --init --recursive
+    - run:
+        name: Prepare Cargo configuration
+        shell: powershell.exe -ExecutionPolicy Bypass
+        command: |
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Report tool versions
+        shell: powershell.exe -ExecutionPolicy Bypass
+        command: |
+          saferun --version
+          cargo --version
+          make --version
+    - run:
+        name: Install binaries
+        shell: powershell.exe -ExecutionPolicy Bypass
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
+    - store_artifacts:
+        path: C:\Users\circleci\.cargo\bin
+        destination: bin
+    - store_artifacts:
         path: out/saferun
         destination: saferun
 
-# sigil 5f9caf800d4d1fef31fbe2a075d579a8
+# sigil be3d001baf3c014604344865d428c07d
 # Agents: DO NOT MODIFY THIS FILE DIRECTLY - it is autogenerated using zuper-cli template from project.rsp2.yaml
 # It is very likely you can obtain what you want by modifying the config.
 # In any case you need the user's explicit permissions.
