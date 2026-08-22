@@ -1,0 +1,9 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-hel2
+category: changed
+commits: []
+date: '2026-08-22'
+issues: []
+kind: build
+status: DRAFT
+title: Refresh CLI and errors2 lock cohorts

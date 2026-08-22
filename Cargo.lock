@@ -754,9 +754,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "9.2.2608210145"
+version = "9.3.2608212241"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "85adcd9d0098c7835ee8cd916f19dbb72c0558f7be420c33e97a86a51bf6c1ba"
+checksum = "e593d0de6aa1483f74207944cd476f440e689c7e4e2a1d830f0a8cb13cd2b412"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.2.2608210145"
+version = "9.3.2608212241"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "fda946f52773314490c113550c013ed44e430b0af7990197a5c24f7b8be206f8"
+checksum = "d1a8fe81cad3f27bad8aac64a881a2e02cd5723ec485595227eb06417d5e4f28"
 dependencies = [
  "serde",
  "serde_json",
@@ -782,9 +782,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.0.2608201044"
+version = "9.0.2608212107"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "8335bc47e8fcfe716268709cdeb2ac793dc242359211f5d9ebc1b230ad7dd5fe"
+checksum = "060875e9c3e45aa5ed073c437829893bfed4275c29a7a5f984b738399c25e320"
 dependencies = [
  "colored",
  "indexmap",
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.0.2608201044"
+version = "9.0.2608212107"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "b249293ac3c4562f413215afec19c84de03a295f9b24284434467d89b8ee97de"
+checksum = "7f7632ae1ee5e053ed7e4c9624832715fa414b47f489b66b36780fdafa27debc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -807,9 +807,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.0.2608201044"
+version = "9.0.2608212107"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "851584e2181a1d0b393f93318608f8ea0b37825d9436f31267f3d6e15faa5e3d"
+checksum = "555c4c78a77c85c2e76f804feb0430677dfc74d081dea79bbeeb81e06f1e4c7b"
 dependencies = [
  "indexmap",
  "zuper-errors2",
