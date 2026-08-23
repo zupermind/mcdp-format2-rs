@@ -4,23 +4,8 @@ parameters:
     type: string
     default: z7-stage
 workflows:
-  test:
+  install:
     jobs:
-    - test1:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-    - rustfmt:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-    - lint:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
     - install-linux:
         context: <<pipeline.parameters.context_name>>
         filters:
@@ -31,8 +16,6 @@ workflows:
             - z7-stage-lupa
           tags:
             ignore: /.*/
-        requires:
-        - test1
     - install-osx:
         context: <<pipeline.parameters.context_name>>
         filters:
@@ -43,9 +26,9 @@ workflows:
             - z7-stage-lupa
           tags:
             ignore: /.*/
-        requires:
-        - test1
-    - install-win:
+  tag-upload:
+    jobs:
+    - tag-upload:
         context: <<pipeline.parameters.context_name>>
         filters:
           branches:
@@ -55,12 +38,106 @@ workflows:
             - z7-stage-lupa
           tags:
             ignore: /.*/
+  fresh:
+    jobs:
+    - lint-fresh:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+  test:
+    jobs:
+    - test1:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+    - rustfmt:
         requires:
         - test1
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+    - lint:
+        requires:
+        - test1
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
 orbs:
   codecov: codecov/codecov@6
 jobs:
+  tag-upload:
+    environment:
+      CARGO_HOME: /root/.cargo
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    resource_class: zuper-ci-ns/r1
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: |
+          eval "$(ssh-agent -s)"
+          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
+          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Create release tag
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/tag --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo tag --extra-tag-suffix "/${Z_DISTRO}-${Z_UNIVERSE}" --allow-dirty
+    - run:
+        name: Upload release
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/upload --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo upload --which last-tag --allow-dirty
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
   lint:
+    environment:
+      CARGO_HOME: /root/.cargo
+      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
+      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    resource_class: small.gen2
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: |
+          eval "$(ssh-agent -s)"
+          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
+          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          zuper-rs-lint --version
+    - run:
+        name: Generate zuper-rs-lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED
+    - store_test_results:
+        path: out/test-results
+    - store_artifacts:
+        path: out/zuper-rs-lint
+        destination: zuper-rs-lint
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  lint-fresh:
     environment:
       CARGO_HOME: /root/.cargo
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
@@ -82,33 +159,13 @@ jobs:
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
     - run:
-        name: Check generated templates
-        command: |
-          run_check() {
-            if test -f zuper-env.yaml; then
-              "$@"
-            else
-              printf '%s\n' 'use: z7-stage' > zuper-env.yaml
-              trap 'rm -f zuper-env.yaml' EXIT
-              "$@"
-            fi
-          }
-          if test -f crates/zuper-templating-cli/Cargo.toml; then
-            run_check env -u ZUPER_TEMPLATING_TEMPLATES_DIR CARGO_BUILD_JOBS=2 zuper-rs-ci-tools cargo-wrap cargo run -p zuper-templating-cli -- check
-          elif zuper-templating help check >/dev/null 2>&1; then
-            run_check zuper-templating check
-          else
-            echo "zuper-templating check is unavailable in the CI image" >&2
-            exit 2
-          fi
-    - run:
         name: Report tool versions
         command: |
           saferun --version
           zuper-rs-lint --version
     - run:
-        name: Generate zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci
+        name: Generate fresh zuper-rs-lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only RUST-CARGO-LOCK-ZUPER-ADVANCED
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -122,6 +179,9 @@ jobs:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
     resource_class: small.gen2
     steps:
     - checkout
@@ -153,6 +213,9 @@ jobs:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
     steps:
     - checkout
     - run:
@@ -226,7 +289,7 @@ jobs:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: zuper-ci-ns/m4-nolimits
+    resource_class: zuper-ci-ns/r1
     steps:
     - checkout
     - run:
@@ -257,9 +320,8 @@ jobs:
         destination: saferun
   install-osx:
     environment:
-      CARGO_HOME: /root/.cargo
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      CARGO_HOME: /Users/circleci/.cargo
+    machine: true
     resource_class: zuper-ci-ns/m4-nolimits
     steps:
     - checkout
@@ -284,47 +346,13 @@ jobs:
         name: Install binaries
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
     - store_artifacts:
-        path: /root/.cargo/bin
-        destination: bin
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
-  install-win:
-    environment:
-      CARGO_HOME: /root/.cargo
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: zuper-ci-ns/windows
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          cargo --version
-          make --version
-    - run:
-        name: Install binaries
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
-    - store_artifacts:
-        path: /root/.cargo/bin
+        path: /Users/circleci/.cargo/bin
         destination: bin
     - store_artifacts:
         path: out/saferun
         destination: saferun
 
-# sigil 9b41add244d65d07774d9e1c95323683
+# sigil 3d0b199a45f7eb874ae35bfce95c9396
 # Agents: DO NOT MODIFY THIS FILE DIRECTLY - it is autogenerated using zuper-cli template from project.rsp2.yaml
 # It is very likely you can obtain what you want by modifying the config.
 # In any case you need the user's explicit permissions.
