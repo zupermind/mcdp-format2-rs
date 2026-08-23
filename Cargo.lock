@@ -213,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "crc32fast"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
+checksum = "8498c871161e1742aaa9d52551b2d6ebdd4c3d45a3be423e3728f33b955be550"
 dependencies = [
  "cfg-if",
 ]
@@ -754,9 +754,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "9.2.2608210145"
+version = "9.3.2608230038"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "85adcd9d0098c7835ee8cd916f19dbb72c0558f7be420c33e97a86a51bf6c1ba"
+checksum = "f668693fdd716fdd178d9223a7051fe10828343010c44d4c5b870d73addce484"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.2.2608210145"
+version = "9.3.2608230038"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "fda946f52773314490c113550c013ed44e430b0af7990197a5c24f7b8be206f8"
+checksum = "5a5f08703fea5c610d646c7bc31bb6b2cd0d8283efff0152a4bd3fd2c33510d8"
 dependencies = [
  "serde",
  "serde_json",
@@ -782,9 +782,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.0.2608201044"
+version = "9.0.2608230038"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "8335bc47e8fcfe716268709cdeb2ac793dc242359211f5d9ebc1b230ad7dd5fe"
+checksum = "9fdbcea4b1f21832db1ecc2893213a55c335b7eff128a9de2e8e61f1b920afb5"
 dependencies = [
  "colored",
  "indexmap",
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.0.2608201044"
+version = "9.0.2608230038"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "b249293ac3c4562f413215afec19c84de03a295f9b24284434467d89b8ee97de"
+checksum = "1a0afb52bf81e7e2ce207c1865d95f4cb7bb6992e231a64a057c80f542c41398"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -807,9 +807,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.0.2608201044"
+version = "9.0.2608230038"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "851584e2181a1d0b393f93318608f8ea0b37825d9436f31267f3d6e15faa5e3d"
+checksum = "8ebad4f830fa2e9be08e9dd00b612c9ce4ab3df375ccc6635d64155c605bbf4f"
 dependencies = [
  "indexmap",
  "zuper-errors2",
