@@ -19,5 +19,5 @@ store-success-output = false
 store-failure-output = true
 
 # sigil 2729444e62ffc35839336e9ae54edfb1
-# template-meta template-version=1.8.2
-# template-meta zuper-templating-version=8.21.2901010000
+# template-meta template-version=1.8.5
+# template-meta zuper-templating-version=8.24.2901010000

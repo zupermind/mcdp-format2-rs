@@ -29,5 +29,5 @@ upload:
 	zuper-figaro-cargo upload --which last-tag --allow-dirty
 
 # sigil 21d60d7909e6f3795dec8370235f8bf6
-# template-meta template-version=1.8.2
-# template-meta zuper-templating-version=8.21.2901010000
+# template-meta template-version=1.8.5
+# template-meta zuper-templating-version=8.24.2901010000
