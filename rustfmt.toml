@@ -27,3 +27,5 @@ struct_lit_single_line = true
 # fn_params_layout = "Compressed"
 
 # sigil 340087bafaaa6cd11ac31c242d274a96
+# template-meta template-version=1.8.2
+# template-meta zuper-templating-version=8.21.2901010000
