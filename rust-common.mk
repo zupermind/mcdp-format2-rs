@@ -1,4 +1,4 @@
-.PHONY: check cargo-check cargo-check-wasm test coverage lint docs tag upload
+.PHONY: check cargo-check cargo-check-wasm test coverage lint docs tag upload upload-no-verify
 
 check: cargo-check cargo-check-wasm
 
@@ -28,6 +28,9 @@ tag:
 upload:
 	zuper-figaro-cargo upload --which last-tag --allow-dirty
 
-# sigil 21d60d7909e6f3795dec8370235f8bf6
-# template-meta template-version=1.8.7
-# template-meta zuper-templating-version=8.25.2901010000
+upload-no-verify:
+	zuper-figaro-cargo upload --which last-tag --allow-dirty --no-verify
+
+# sigil 8776b621922577d10cf4160442b8dd1c
+# template-meta template-version=1.8.9
+# template-meta zuper-templating-version=8.27.2901010000

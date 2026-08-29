@@ -11,5 +11,5 @@ repos:
     pass_filenames: false
 
 # sigil 12ca70ed877e1bce091b2a624db49eb2
-# template-meta template-version=1.8.7
-# template-meta zuper-templating-version=8.25.2901010000
+# template-meta template-version=1.8.9
+# template-meta zuper-templating-version=8.27.2901010000
