@@ -3,568 +3,64 @@ parameters:
   context_name:
     type: string
     default: z7-stage
-  run_install:
-    type: boolean
-    default: false
 workflows:
-  install:
-    when: << pipeline.parameters.run_install >>
-    jobs:
-    - install-linux:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          branches:
-            only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
-          tags:
-            ignore: /.*/
-    - install-osx:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          branches:
-            only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
-          tags:
-            ignore: /.*/
-  tag-upload:
-    jobs:
-    - tag-upload:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          branches:
-            only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
-          tags:
-            ignore: /.*/
-  fresh:
-    jobs:
-    - lint-fresh:
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
   test:
     jobs:
-    - pre-gate:
-        filters:
-          tags:
-            ignore: /.*/
-    - test-compile:
-        requires:
-        - pre-gate
+    - test1:
         context: <<pipeline.parameters.context_name>>
         filters:
           tags:
             ignore: /.*/
-        name: test-compile
-    - test-run:
-        requires:
-        - test-compile
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-        name: test-run-1
-        worker_index: 0
-    - test-run-aggregate:
-        requires:
-        - test-run-1
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-        name: test-run-aggregate
-    - test-report:
-        requires:
-        - test-run-aggregate
-        context: <<pipeline.parameters.context_name>>
-        filters:
-          tags:
-            ignore: /.*/
-        name: test-report
     - rustfmt:
-        requires:
-        - pre-gate
         context: <<pipeline.parameters.context_name>>
         filters:
           tags:
             ignore: /.*/
     - lint:
-        requires:
-        - pre-gate
         context: <<pipeline.parameters.context_name>>
         filters:
           tags:
             ignore: /.*/
+    - install:
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+        requires:
+        - test1
 orbs:
   codecov: codecov/codecov@6
 jobs:
-  pre-gate:
-    docker:
-    - image: cimg/base:stable
-    resource_class: small.gen2
-    steps:
-    - checkout
-    - run:
-        name: Verify pull-request head contains its target branch
-        command: |
-          set -eu
-
-          if [ -z "${CIRCLE_SHA1:-}" ]; then
-            echo "CIRCLE_SHA1 is required for pull-request target-containment checks." >&2
-            exit 1
-          fi
-
-          if ! pull_request_heads="$(git ls-remote --refs origin 'refs/pull/*/head')"; then
-            echo "Cannot query GitHub pull-request head refs from origin." >&2
-            exit 1
-          fi
-          pull_request_numbers="$(
-            printf '%s\n' "${pull_request_heads}" |
-              awk -v sha="${CIRCLE_SHA1}" '
-                $1 == sha {
-                  ref = $2
-                  sub("^refs/pull/", "", ref)
-                  sub("/head$", "", ref)
-                  print ref
-                }
-              '
-          )"
-          if [ -z "${pull_request_numbers}" ]; then
-            case "${CIRCLE_BRANCH:-}" in
-              z7-stage|z7-prod|z7-stage-lupa)
-                trunk_ref="refs/heads/${CIRCLE_BRANCH}"
-                if ! trunk_head="$(git ls-remote --heads origin "${trunk_ref}")"; then
-                  echo "Cannot query current trunk ref ${trunk_ref} from origin." >&2
-                  exit 1
-                fi
-                if ! printf '%s\n' "${trunk_head}" | awk -v sha="${CIRCLE_SHA1}" '$1 == sha { found = 1 } END { exit !found }'; then
-                  echo "Pipeline commit ${CIRCLE_SHA1} is not the current commit of trunk branch ${CIRCLE_BRANCH}." >&2
-                  exit 1
-                fi
-                echo "Non-pull-request pipeline commit ${CIRCLE_SHA1} is current on trunk branch ${CIRCLE_BRANCH}."
-                exit 0
-                ;;
-              *)
-                echo "No GitHub pull-request head ref matches ${CIRCLE_SHA1}, and ${CIRCLE_BRANCH:-<unset>} is not a recognized trunk branch." >&2
-                echo "Refusing to start expensive CI jobs without target-containment evidence." >&2
-                exit 1
-                ;;
-            esac
-          fi
-
-          cleanup_merge_ref() {
-            for pull_request_number in ${pull_request_numbers}; do
-              git update-ref -d "refs/zuper-pre-gate/pull/${pull_request_number}/merge" >/dev/null 2>&1 || true
-            done
-          }
-          trap cleanup_merge_ref EXIT
-          for pull_request_number in ${pull_request_numbers}; do
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Invalid GitHub pull-request head ref number: ${pull_request_number}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-pre-gate/pull/${pull_request_number}/merge"
-            merge_ref_attempt=1
-            merge_ref_attempts=15
-            merge_ref_ready=false
-            merge_ref_reason="merge ref has not been fetched"
-            while [ "${merge_ref_attempt}" -le "${merge_ref_attempts}" ]; do
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-              if git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-                # GitHub may update the pull head before it refreshes this synthetic ref's second parent.
-                # Only its first parent identifies the target; Circle's exact pipeline SHA identifies the head.
-                target_sha="$(git rev-parse "${merge_ref}^1")"
-                if ! target_branch_heads="$(git ls-remote --heads origin)"; then
-                  merge_ref_reason="cannot query current target-branch heads"
-                elif ! printf '%s\n' "${target_branch_heads}" | awk -v sha="${target_sha}" '$1 == sha { found = 1 } END { exit !found }'; then
-                  merge_ref_reason="merge ref identifies target ${target_sha}, which is not a current branch head"
-                else
-                  merge_ref_ready=true
-                  break
-                fi
-              else
-                merge_ref_reason="merge ref is unavailable"
-              fi
-
-              if [ "${merge_ref_attempt}" -lt "${merge_ref_attempts}" ]; then
-                echo "Pull-request ${pull_request_number} ${merge_ref_reason}; retrying after GitHub ref propagation."
-                sleep 2
-              fi
-              merge_ref_attempt=$((merge_ref_attempt + 1))
-            done
-            if [ "${merge_ref_ready}" != true ]; then
-              echo "Cannot obtain a current GitHub merge ref for pull request ${pull_request_number}: ${merge_ref_reason}." >&2
-              exit 1
-            fi
-            if ! git merge-base --is-ancestor "${target_sha}" "${CIRCLE_SHA1}"; then
-              echo "Pull-request head ${CIRCLE_SHA1} does not contain target commit ${target_sha}." >&2
-              echo "Update the pull-request branch before running expensive CI jobs." >&2
-              exit 1
-            fi
-            echo "Pull-request ${pull_request_number} head ${CIRCLE_SHA1} contains target commit ${target_sha}."
-          done
-  tag-upload:
+  lint:
     environment:
       CARGO_HOME: /root/.cargo
+      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
+      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
     resource_class: zuper-ci-ns/r1
     steps:
     - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
+    - run: &prepare_cargo_configuration
         name: Prepare Cargo configuration
         command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Create release tag
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/tag --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo tag --extra-tag-suffix "/${Z_DISTRO}-${Z_UNIVERSE}" --allow-dirty
-    - run:
-        name: Upload release
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/upload --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo upload --which last-tag --allow-dirty
-    - run:
-        name: Upload binary release assets
-        command: |
-          if ! command -v gh >/dev/null 2>&1; then
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gh
-            rm -rf /var/lib/apt/lists/*
-          fi
-          saferun run \
-            --no-direnv \
-            --standalone \
-            --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/upload-binstall \
-            --heartbeat 30s \
-            --stats-interval 5s \
-            -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo upload-binstall \
-            --which last-tag \
-            --scope "${Z_DISTRO}-${Z_UNIVERSE}" \
-            --allow-dirty
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
-  lint:
-    environment:
-      CARGO_HOME: /root/.cargo
-      CIRCLEVAR_PIPELINE_CONFIG_FILE_PATH: << pipeline.config.file_path >>
-      CIRCLEVAR_PIPELINE_CONFIG_REF: << pipeline.config.ref >>
-      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_NAME: << pipeline.config.repository.name >>
-      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_URL: << pipeline.config.repository.url >>
-      CIRCLEVAR_PIPELINE_CONFIG_SHA: << pipeline.config.sha >>
-      CIRCLEVAR_PIPELINE_DEFINITION_ID: << pipeline.definition.id >>
-      CIRCLEVAR_PIPELINE_DEPLOY_COMPONENT_NAME: << pipeline.deploy.component_name >>
-      CIRCLEVAR_PIPELINE_DEPLOY_CURRENT_VERSION: << pipeline.deploy.current_version >>
-      CIRCLEVAR_PIPELINE_DEPLOY_ENVIRONMENT_NAME: << pipeline.deploy.environment_name >>
-      CIRCLEVAR_PIPELINE_DEPLOY_NAMESPACE: << pipeline.deploy.namespace >>
-      CIRCLEVAR_PIPELINE_DEPLOY_REASON: << pipeline.deploy.reason >>
-      CIRCLEVAR_PIPELINE_DEPLOY_TARGET_VERSION: << pipeline.deploy.target_version >>
-      CIRCLEVAR_PIPELINE_EVENT_ACTION: << pipeline.event.action >>
-      CIRCLEVAR_PIPELINE_EVENT_CONTEXT_GITHUB_PR_URL: << pipeline.event.context.github.pr_url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_AFTER: << pipeline.event.github.after >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_COMMENT_BODY: << pipeline.event.github.comment.body >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_HEAD_COMMIT_URL: << pipeline.event.github.head_commit.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_LABEL_NAME: << pipeline.event.github.label.name >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF: << pipeline.event.github.pull_request.base.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_SHA: << pipeline.event.github.pull_request.base.sha >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_DRAFT: << pipeline.event.github.pull_request.draft >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_REF: << pipeline.event.github.pull_request.head.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_SHA: << pipeline.event.github.pull_request.head.sha >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_MERGED: << pipeline.event.github.pull_request.merged >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_NUMBER: << pipeline.event.github.pull_request.number >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_TITLE: << pipeline.event.github.pull_request.title >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_URL: << pipeline.event.github.pull_request.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REF: << pipeline.event.github.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_NAME: << pipeline.event.github.repository.name >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_OWNER_LOGIN: << pipeline.event.github.repository.owner.login >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_URL: << pipeline.event.github.repository.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_AVATAR_URL: << pipeline.event.github.sender.avatar_url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_LOGIN: << pipeline.event.github.sender.login >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_TYPE: << pipeline.event.github.sender.type >>
-      CIRCLEVAR_PIPELINE_EVENT_NAME: << pipeline.event.name >>
-      CIRCLEVAR_PIPELINE_GIT_BASE_REVISION: << pipeline.git.base_revision >>
-      CIRCLEVAR_PIPELINE_GIT_BRANCH: << pipeline.git.branch >>
-      CIRCLEVAR_PIPELINE_GIT_BRANCH_IS_DEFAULT: << pipeline.git.branch.is_default >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_AUTHOR_LOGIN: << pipeline.git.commit.author_login >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_BODY: << pipeline.git.commit.body >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_SUBJECT: << pipeline.git.commit.subject >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_URL: << pipeline.git.commit.url >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_ID: << pipeline.git.repo_id >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_NAME: << pipeline.git.repo_name >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_OWNER: << pipeline.git.repo_owner >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_URL: << pipeline.git.repo_url >>
-      CIRCLEVAR_PIPELINE_GIT_REVISION: << pipeline.git.revision >>
-      CIRCLEVAR_PIPELINE_GIT_TAG: << pipeline.git.tag >>
-      CIRCLEVAR_PIPELINE_ID: << pipeline.id >>
-      CIRCLEVAR_PIPELINE_INTEGRATION_SOURCE: << pipeline.integration_source >>
-      CIRCLEVAR_PIPELINE_NAME: << pipeline.name >>
-      CIRCLEVAR_PIPELINE_NUMBER: << pipeline.number >>
-      CIRCLEVAR_PIPELINE_PROJECT_GIT_URL: << pipeline.project.git_url >>
-      CIRCLEVAR_PIPELINE_PROJECT_SLUG: << pipeline.project.slug >>
-      CIRCLEVAR_PIPELINE_PROJECT_TYPE: << pipeline.project.type >>
-      CIRCLEVAR_PIPELINE_SCHEDULE_ID: << pipeline.schedule.id >>
-      CIRCLEVAR_PIPELINE_SCHEDULE_NAME: << pipeline.schedule.name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_ID: << pipeline.trigger.id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_BRANCH: << pipeline.trigger_parameters.gitlab.branch >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_CHECKOUT_SHA: << pipeline.trigger_parameters.gitlab.checkout_sha >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_EMAIL: << pipeline.trigger_parameters.gitlab.commit_author_email >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_NAME: << pipeline.trigger_parameters.gitlab.commit_author_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_MESSAGE: << pipeline.trigger_parameters.gitlab.commit_message >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_SHA: << pipeline.trigger_parameters.gitlab.commit_sha >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TIMESTAMP: << pipeline.trigger_parameters.gitlab.commit_timestamp >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TITLE: << pipeline.trigger_parameters.gitlab.commit_title >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_DEFAULT_BRANCH: << pipeline.trigger_parameters.gitlab.default_branch >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_IS_FORK_MERGE_REQUEST: << pipeline.trigger_parameters.gitlab.is_fork_merge_request >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REF: << pipeline.trigger_parameters.gitlab.ref >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_NAME: << pipeline.trigger_parameters.gitlab.repo_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_URL: << pipeline.trigger_parameters.gitlab.repo_url >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_TYPE: << pipeline.trigger_parameters.gitlab.type >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_AVATAR: << pipeline.trigger_parameters.gitlab.user_avatar >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_ID: << pipeline.trigger_parameters.gitlab.user_id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_NAME: << pipeline.trigger_parameters.gitlab.user_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_USERNAME: << pipeline.trigger_parameters.gitlab.user_username >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_WEB_URL: << pipeline.trigger_parameters.gitlab.web_url >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_X_GITLAB_EVENT_ID: << pipeline.trigger_parameters.gitlab.x_gitlab_event_id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
-      CIRCLEVAR_PIPELINE_TRIGGER_RECEIVED_AT: << pipeline.trigger.received_at >>
-      CIRCLEVAR_PIPELINE_TRIGGER_TYPE: << pipeline.trigger.type >>
-      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
-      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
-    resource_class: small.gen2
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Prefetch locked Cargo dependencies
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
     - run:
         name: Report tool versions
         command: |
           saferun --version
           zuper-rs-lint --version
-    - run:
-        name: Resolve pull-request base context
-        command: |
-          if [ -n "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF:-}" ] && [ "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" != "<nil>" ]; then
-            printf 'export ZUPER_RS_LINT_PR_BASE_REF=%q\n' "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" >> "${BASH_ENV}"
-          elif [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
-            # OAuth base_revision is the previous branch build, not the PR target. GitHub's merge-ref first parent is the exact target commit.
-            pull_request_url="${CIRCLE_PULL_REQUEST%/}"
-            pull_request_number="${pull_request_url##*/}"
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Cannot extract a numeric pull-request number from CIRCLE_PULL_REQUEST=${CIRCLE_PULL_REQUEST}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-rs-lint/pull/${pull_request_number}/merge"
-            cleanup_merge_ref() {
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-            }
-            trap cleanup_merge_ref EXIT
-            if ! git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-              echo "Cannot fetch GitHub pull-request merge ref refs/pull/${pull_request_number}/merge" >&2
-              exit 1
-            fi
-            if ! pull_request_base_sha="$(git rev-parse "${merge_ref}^1")"; then
-              echo "Cannot resolve the first parent of GitHub pull-request merge ref ${merge_ref}" >&2
-              exit 1
-            fi
-            cleanup_merge_ref
-            trap - EXIT
-            printf 'export ZUPER_RS_LINT_PR_BASE_SHA=%q\n' "${pull_request_base_sha}" >> "${BASH_ENV}"
-          fi
     - run:
         name: Generate zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED
-    - store_test_results:
-        path: out/test-results
-    - store_artifacts:
-        path: out/zuper-rs-lint
-        destination: zuper-rs-lint
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
-  lint-fresh:
-    environment:
-      CARGO_HOME: /root/.cargo
-      CIRCLEVAR_PIPELINE_CONFIG_FILE_PATH: << pipeline.config.file_path >>
-      CIRCLEVAR_PIPELINE_CONFIG_REF: << pipeline.config.ref >>
-      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_NAME: << pipeline.config.repository.name >>
-      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_URL: << pipeline.config.repository.url >>
-      CIRCLEVAR_PIPELINE_CONFIG_SHA: << pipeline.config.sha >>
-      CIRCLEVAR_PIPELINE_DEFINITION_ID: << pipeline.definition.id >>
-      CIRCLEVAR_PIPELINE_DEPLOY_COMPONENT_NAME: << pipeline.deploy.component_name >>
-      CIRCLEVAR_PIPELINE_DEPLOY_CURRENT_VERSION: << pipeline.deploy.current_version >>
-      CIRCLEVAR_PIPELINE_DEPLOY_ENVIRONMENT_NAME: << pipeline.deploy.environment_name >>
-      CIRCLEVAR_PIPELINE_DEPLOY_NAMESPACE: << pipeline.deploy.namespace >>
-      CIRCLEVAR_PIPELINE_DEPLOY_REASON: << pipeline.deploy.reason >>
-      CIRCLEVAR_PIPELINE_DEPLOY_TARGET_VERSION: << pipeline.deploy.target_version >>
-      CIRCLEVAR_PIPELINE_EVENT_ACTION: << pipeline.event.action >>
-      CIRCLEVAR_PIPELINE_EVENT_CONTEXT_GITHUB_PR_URL: << pipeline.event.context.github.pr_url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_AFTER: << pipeline.event.github.after >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_COMMENT_BODY: << pipeline.event.github.comment.body >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_HEAD_COMMIT_URL: << pipeline.event.github.head_commit.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_LABEL_NAME: << pipeline.event.github.label.name >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF: << pipeline.event.github.pull_request.base.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_SHA: << pipeline.event.github.pull_request.base.sha >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_DRAFT: << pipeline.event.github.pull_request.draft >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_REF: << pipeline.event.github.pull_request.head.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_SHA: << pipeline.event.github.pull_request.head.sha >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_MERGED: << pipeline.event.github.pull_request.merged >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_NUMBER: << pipeline.event.github.pull_request.number >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_TITLE: << pipeline.event.github.pull_request.title >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_URL: << pipeline.event.github.pull_request.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REF: << pipeline.event.github.ref >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_NAME: << pipeline.event.github.repository.name >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_OWNER_LOGIN: << pipeline.event.github.repository.owner.login >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_URL: << pipeline.event.github.repository.url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_AVATAR_URL: << pipeline.event.github.sender.avatar_url >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_LOGIN: << pipeline.event.github.sender.login >>
-      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_TYPE: << pipeline.event.github.sender.type >>
-      CIRCLEVAR_PIPELINE_EVENT_NAME: << pipeline.event.name >>
-      CIRCLEVAR_PIPELINE_GIT_BASE_REVISION: << pipeline.git.base_revision >>
-      CIRCLEVAR_PIPELINE_GIT_BRANCH: << pipeline.git.branch >>
-      CIRCLEVAR_PIPELINE_GIT_BRANCH_IS_DEFAULT: << pipeline.git.branch.is_default >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_AUTHOR_LOGIN: << pipeline.git.commit.author_login >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_BODY: << pipeline.git.commit.body >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_SUBJECT: << pipeline.git.commit.subject >>
-      CIRCLEVAR_PIPELINE_GIT_COMMIT_URL: << pipeline.git.commit.url >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_ID: << pipeline.git.repo_id >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_NAME: << pipeline.git.repo_name >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_OWNER: << pipeline.git.repo_owner >>
-      CIRCLEVAR_PIPELINE_GIT_REPO_URL: << pipeline.git.repo_url >>
-      CIRCLEVAR_PIPELINE_GIT_REVISION: << pipeline.git.revision >>
-      CIRCLEVAR_PIPELINE_GIT_TAG: << pipeline.git.tag >>
-      CIRCLEVAR_PIPELINE_ID: << pipeline.id >>
-      CIRCLEVAR_PIPELINE_INTEGRATION_SOURCE: << pipeline.integration_source >>
-      CIRCLEVAR_PIPELINE_NAME: << pipeline.name >>
-      CIRCLEVAR_PIPELINE_NUMBER: << pipeline.number >>
-      CIRCLEVAR_PIPELINE_PROJECT_GIT_URL: << pipeline.project.git_url >>
-      CIRCLEVAR_PIPELINE_PROJECT_SLUG: << pipeline.project.slug >>
-      CIRCLEVAR_PIPELINE_PROJECT_TYPE: << pipeline.project.type >>
-      CIRCLEVAR_PIPELINE_SCHEDULE_ID: << pipeline.schedule.id >>
-      CIRCLEVAR_PIPELINE_SCHEDULE_NAME: << pipeline.schedule.name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_ID: << pipeline.trigger.id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_BRANCH: << pipeline.trigger_parameters.gitlab.branch >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_CHECKOUT_SHA: << pipeline.trigger_parameters.gitlab.checkout_sha >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_EMAIL: << pipeline.trigger_parameters.gitlab.commit_author_email >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_NAME: << pipeline.trigger_parameters.gitlab.commit_author_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_MESSAGE: << pipeline.trigger_parameters.gitlab.commit_message >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_SHA: << pipeline.trigger_parameters.gitlab.commit_sha >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TIMESTAMP: << pipeline.trigger_parameters.gitlab.commit_timestamp >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TITLE: << pipeline.trigger_parameters.gitlab.commit_title >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_DEFAULT_BRANCH: << pipeline.trigger_parameters.gitlab.default_branch >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_IS_FORK_MERGE_REQUEST: << pipeline.trigger_parameters.gitlab.is_fork_merge_request >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REF: << pipeline.trigger_parameters.gitlab.ref >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_NAME: << pipeline.trigger_parameters.gitlab.repo_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_URL: << pipeline.trigger_parameters.gitlab.repo_url >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_TYPE: << pipeline.trigger_parameters.gitlab.type >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_AVATAR: << pipeline.trigger_parameters.gitlab.user_avatar >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_ID: << pipeline.trigger_parameters.gitlab.user_id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_NAME: << pipeline.trigger_parameters.gitlab.user_name >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_USERNAME: << pipeline.trigger_parameters.gitlab.user_username >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_WEB_URL: << pipeline.trigger_parameters.gitlab.web_url >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_X_GITLAB_EVENT_ID: << pipeline.trigger_parameters.gitlab.x_gitlab_event_id >>
-      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
-      CIRCLEVAR_PIPELINE_TRIGGER_RECEIVED_AT: << pipeline.trigger.received_at >>
-      CIRCLEVAR_PIPELINE_TRIGGER_TYPE: << pipeline.trigger.type >>
-      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
-      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: small.gen2
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Prefetch locked Cargo dependencies
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          zuper-rs-lint --version
-    - run:
-        name: Resolve pull-request base context
-        command: |
-          if [ -n "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF:-}" ] && [ "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" != "<nil>" ]; then
-            printf 'export ZUPER_RS_LINT_PR_BASE_REF=%q\n' "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" >> "${BASH_ENV}"
-          elif [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
-            # OAuth base_revision is the previous branch build, not the PR target. GitHub's merge-ref first parent is the exact target commit.
-            pull_request_url="${CIRCLE_PULL_REQUEST%/}"
-            pull_request_number="${pull_request_url##*/}"
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Cannot extract a numeric pull-request number from CIRCLE_PULL_REQUEST=${CIRCLE_PULL_REQUEST}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-rs-lint/pull/${pull_request_number}/merge"
-            cleanup_merge_ref() {
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-            }
-            trap cleanup_merge_ref EXIT
-            if ! git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-              echo "Cannot fetch GitHub pull-request merge ref refs/pull/${pull_request_number}/merge" >&2
-              exit 1
-            fi
-            if ! pull_request_base_sha="$(git rev-parse "${merge_ref}^1")"; then
-              echo "Cannot resolve the first parent of GitHub pull-request merge ref ${merge_ref}" >&2
-              exit 1
-            fi
-            cleanup_merge_ref
-            trap - EXIT
-            printf 'export ZUPER_RS_LINT_PR_BASE_SHA=%q\n' "${pull_request_base_sha}" >> "${BASH_ENV}"
-          fi
-    - run:
-        name: Generate fresh zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only RUST-CARGO-LOCK-ZUPER-ADVANCED
+        command: >-
+          saferun run
+          --no-direnv
+          --standalone
+          --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint
+          --heartbeat 30s
+          --stats-interval 5s
+          -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -578,25 +74,10 @@ jobs:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
     resource_class: small.gen2
     steps:
     - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run: *prepare_cargo_configuration
     - run:
         name: Report tool versions
         command: |
@@ -605,31 +86,27 @@ jobs:
           rustfmt +nightly --version
     - run:
         name: Check Rust formatting
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/rustfmt --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo +nightly fmt --all -- --check
+        command: >-
+          saferun run
+          --no-direnv
+          --standalone
+          --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/rustfmt
+          --heartbeat 30s
+          --stats-interval 5s
+          -- zuper-rs-ci-tools cargo-wrap cargo +nightly fmt --all -- --check
     - store_artifacts:
         path: out/saferun
         destination: saferun
-  test-compile:
+  test1:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
     steps:
     - checkout
     - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
         name: Prepare the environment
         command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
           mkdir -p out/test-results target/llvm-cov-target
     - run:
@@ -654,59 +131,25 @@ jobs:
           fi
     - run:
         name: Compile and archive coverage tests
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
-    - persist_to_workspace:
-        root: '.'
-        paths:
-        - out/nextest-coverage-tests.tar.zst
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
-    resource_class: zuper-ci-ns/r4
-  test-run:
-    environment:
-      CARGO_HOME: /root/.cargo
-      CIRCLE_NODE_INDEX: << parameters.worker_index >>
-      CIRCLE_NODE_TOTAL: 1
-      RUST_BACKTRACE: full
-      ZUPER_CIRCLE_LOGICAL_JOB: test-run
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare the environment
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results target/llvm-cov-target
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          cargo --version
-          cargo nextest --version
-          cargo llvm-cov --version
-          make --version
-    - attach_workspace:
-        at: '.'
+        command: >-
+          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
     - run:
         name: Run coverage tests
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
-    - persist_to_workspace:
-        root: '.'
-        paths:
-        - target/llvm-cov-target/*.profraw
+        command: >-
+          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+    - run:
+        name: Generate coverage report
+        command: >-
+          saferun run
+          --no-direnv
+          --standalone
+          --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/coverage-report
+          --heartbeat 30s
+          --stats-interval 5s
+          -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target zuper-rs-ci-tools cargo-wrap cargo llvm-cov report
+          --nextest-archive-file out/nextest-coverage-tests.tar.zst
+          --lcov
+          --output-path lcov.info
     - run:
         name: copy results
         when: always
@@ -725,64 +168,6 @@ jobs:
     - store_test_results:
         path: out/test-results
     - store_artifacts:
-        path: out/saferun
-        destination: saferun
-    resource_class: zuper-ci-ns/r1
-    parallelism: 1
-    parameters:
-      worker_index:
-        type: integer
-  test-run-aggregate:
-    resource_class: small.gen2
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
-    steps:
-    - run:
-        name: Test shards passed
-        command: 'true'
-  test-report:
-    environment:
-      CARGO_HOME: /root/.cargo
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare the environment
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results target/llvm-cov-target
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          cargo --version
-          cargo nextest --version
-          cargo llvm-cov --version
-          make --version
-    - attach_workspace:
-        at: '.'
-    - run:
-        name: Extract coverage archive
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/coverage-extract --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo nextest list --archive-file out/nextest-coverage-tests.tar.zst --extract-to target/llvm-cov-target --extract-overwrite
-    - run:
-        name: Generate coverage report
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/coverage-report --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target zuper-rs-ci-tools cargo-wrap cargo llvm-cov report --nextest-archive-file out/nextest-coverage-tests.tar.zst --lcov --output-path lcov.info
-    - store_artifacts:
         path: out/coverage
         destination: coverage
     - store_artifacts:
@@ -790,24 +175,15 @@ jobs:
         destination: saferun
     - codecov/upload:
         when: always
-    resource_class: small.gen2
-  install-linux:
+    resource_class: zuper-ci-ns/r4
+  install:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-      auth:
-        username: $DOCKER_IO_READONLY_USERNAME
-        password: $DOCKER_IO_READONLY_TOKEN
     resource_class: zuper-ci-ns/r4
     steps:
     - checkout
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -821,97 +197,25 @@ jobs:
           make --version
     - run:
         name: Install binaries
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
+        command: >-
+          saferun run
+          --no-direnv
+          --standalone
+          --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install
+          --heartbeat 30s
+          --stats-interval 5s
+          -- zuper-rs-ci-tools cargo-wrap make install
     - store_artifacts:
         path: /root/.cargo/bin
         destination: bin
     - store_artifacts:
         path: out/saferun
         destination: saferun
-  install-osx:
-    environment:
-      CARGO_HOME: /Users/circleci/.cargo
-    machine: true
-    resource_class: zuper-ci-ns/m4-nolimits
-    steps:
-    - checkout
-    - run:
-        name: Hydrate Git LFS files
-        command: |
-          if ! command -v git-lfs >/dev/null 2>&1; then
-            git_lfs_version=3.7.1
-            case "$(uname -m)" in
-              arm64|aarch64)
-                git_lfs_arch=arm64
-                git_lfs_sha256=76260fb34f4ee622ff0a66b857e5954aa49c7e343a92e57a1ec4a760618c94b2
-                ;;
-              x86_64|amd64)
-                git_lfs_arch=amd64
-                git_lfs_sha256=b5b1b641c0648c83661fa9eda991cd3eff945264dabc2cdf411a80dfe7ec0970
-                ;;
-              *)
-                echo "unsupported macOS architecture: $(uname -m)" >&2
-                exit 1
-                ;;
-            esac
-            git_lfs_root="$PWD/tmp/git-lfs"
-            git_lfs_archive="$git_lfs_root/git-lfs.zip"
-            git_lfs_bin_dir="$git_lfs_root/bin"
-            mkdir -p "$git_lfs_bin_dir"
-            curl -fsSL \
-              "https://github.com/git-lfs/git-lfs/releases/download/v${git_lfs_version}/git-lfs-darwin-${git_lfs_arch}-v${git_lfs_version}.zip" \
-              -o "$git_lfs_archive"
-            printf '%s  %s\n' "$git_lfs_sha256" "$git_lfs_archive" | shasum -a 256 -c -
-            unzip -jo "$git_lfs_archive" "git-lfs-${git_lfs_version}/git-lfs" -d "$git_lfs_bin_dir"
-            export PATH="$git_lfs_bin_dir:$PATH"
-          fi
-          git lfs install --local
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git lfs pull
-    - run:
-        name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          cargo --version
-          make --version
-    - run:
-        name: Install binaries
-        command: |-
-          export CARGO_INSTALL_ROOT="$PWD/out/cargo-install/install-osx"
-          export PATH="$CARGO_INSTALL_ROOT/bin:$PATH"
-          rm -rf "$CARGO_INSTALL_ROOT" "$PWD/out/install-artifacts/install-osx"
-          mkdir -p "$CARGO_INSTALL_ROOT/bin" "$PWD/out/install-artifacts/install-osx"
-          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
-    - run:
-        name: Stage install binaries
-        command: |-
-          set -eu
-          install_root="$PWD/out/cargo-install/install-osx"
-          artifact_root="$PWD/out/install-artifacts/install-osx"
-          mkdir -p "$artifact_root"
-          for binary in 'mcdp-format2-rs-load'; do
-          source="$install_root/bin/$binary"
-          if [ ! -f "$source" ]; then echo "missing installed workspace binary: $source" >&2; exit 1; fi
-          cp -p "$source" "$artifact_root/"
-          done
-    - store_artifacts:
-        path: out/install-artifacts/install-osx
-        destination: bin
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
 
-# sigil af4624a909f20dec180f875bacb08f5c
+# sigil 03e1fdfa0d783afabdbb0e8cd402270d
+# Agents: DO NOT MODIFY THIS FILE DIRECTLY - it is autogenerated using zuper-cli template from project.rsp2.yaml
+# It is very likely you can obtain what you want by modifying the config.
+# In any case you need the user's explicit permissions.
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
 # template-meta template-version=1.8.9
 # template-meta zuper-templating-version=8.27.2901010000

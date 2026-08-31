@@ -1,15 +1,14 @@
 repos:
-- repo: local
-  hooks:
-  - id: cargo-fmt
-    name: cargo fmt
-    description: Format Rust code using rustfmt
+- hooks:
+  - description: Format Rust code using rustfmt
     entry: cargo +nightly fmt --
+    id: cargo-fmt
     language: system
-    types:
-    - rust
+    name: cargo fmt
     pass_filenames: false
+    types: [rust]
+  repo: local
 
-# sigil 12ca70ed877e1bce091b2a624db49eb2
+# sigil ccaaf9c6be0d30e87d1f750e6741efb3
 # template-meta template-version=1.8.9
 # template-meta zuper-templating-version=8.27.2901010000
