@@ -72,6 +72,15 @@ workflows:
             ignore: /.*/
         name: test-run-1
         worker_index: 0
+    - test-upload:
+        requires:
+        - test-compile
+        - test-run-1: terminal
+        context: <<pipeline.parameters.context_name>>
+        filters:
+          tags:
+            ignore: /.*/
+        name: test-upload
     - test-run-aggregate:
         requires:
         - test-run-1
@@ -217,7 +226,7 @@ jobs:
       CARGO_HOME: /root/.cargo
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: zuper-ci-ns/r1
+    resource_class: small.gen2
     steps:
     - checkout
     - run:
@@ -613,7 +622,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
     - run:
         name: Report tool versions
         command: |
@@ -671,7 +680,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
     - run:
         name: Report tool versions
         command: |
@@ -684,36 +693,83 @@ jobs:
         at: '.'
     - run:
         name: Run coverage tests
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+        command: |
+          set +e
+          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw XDG_CACHE_HOME="$(pwd)/out/zuper-testing-cache" zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+          test_status=$?
+          set -e
+          printf '%s\n' "${test_status}" > "out/test-status/node-${CIRCLE_NODE_INDEX}.status"
     - persist_to_workspace:
         root: '.'
         paths:
         - target/llvm-cov-target/*.profraw
+        - out/zuper-testing-cache
     - run:
         name: copy results
         when: always
         command: |
           cp target/nextest/ci/junit.xml out/test-results/report-${CIRCLE_NODE_INDEX}.xml || true
-    - run:
-        name: post-circle-tests
-        when: always
-        command: |
-          TARGET=post-circle-tests
-          if make -n $TARGET ; then
-              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/post-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make post-circle-tests
-          else
-              echo "Target $TARGET not defined"
-          fi
     - store_test_results:
         path: out/test-results
+    - run:
+        name: Report test outcome
+        command: |
+          test_status="$(cat "out/test-status/node-${CIRCLE_NODE_INDEX}.status")"
+          exit "${test_status}"
     - store_artifacts:
         path: out/saferun
         destination: saferun
-    resource_class: zuper-ci-ns/r1
+    resource_class: small.gen2
     parallelism: 1
     parameters:
       worker_index:
         type: integer
+  test-upload:
+    environment:
+      CARGO_HOME: /root/.cargo
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: |
+          eval "$(ssh-agent -s)"
+          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
+          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+    - run:
+        name: Prepare the environment
+        command: |
+          export CARGO_TARGET_DIR="$(pwd)/target"
+          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          cargo --version
+          cargo nextest --version
+          cargo llvm-cov --version
+          make --version
+    - attach_workspace:
+        at: '.'
+    - run:
+        name: test-upload
+        command: |
+          TARGET=test-upload
+          if make -n "${TARGET}"; then
+              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-upload --heartbeat 30s --stats-interval 5s -- env XDG_CACHE_HOME="$(pwd)/out/zuper-testing-cache" zuper-rs-ci-tools cargo-wrap make "${TARGET}"
+          else
+              echo "Target ${TARGET} not defined"
+          fi
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+    resource_class: small.gen2
   test-run-aggregate:
     resource_class: small.gen2
     docker:
@@ -747,7 +803,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
     - run:
         name: Report tool versions
         command: |
@@ -893,7 +949,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil 0852cdf7fc3169bdbb1cd73ded6e7a22
+# sigil f693d310445427422fd62d452092992b
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
-# template-meta template-version=2.0
-# template-meta zuper-templating-version=8.28.2901010000
+# template-meta template-version=2.1
+# template-meta zuper-templating-version=8.29.2901010000
