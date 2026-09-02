@@ -47,6 +47,19 @@ workflows:
     - lint-fresh:
         context: <<pipeline.parameters.context_name>>
         filters:
+          branches:
+            ignore:
+            - z7-stage
+            - z7-prod
+            - z7-stage-lupa
+          tags:
+            ignore: /.*/
+  lint-pr-ready:
+    when: pipeline.event.name == "pull_request"
+    jobs:
+    - lint-pr-ready:
+        context: <<pipeline.parameters.context_name>>
+        filters:
           tags:
             ignore: /.*/
   test:
@@ -267,11 +280,134 @@ jobs:
           saferun --version
           zuper-rs-lint --version
     - run:
+        name: Generate zuper-rs-lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED --exclude CI-PR-CHANGE-FRAGMENT --exclude CI-PR-TARGET-ANCESTOR --exclude RUST-PR-VERSION-MINOR-OR-MAJOR
+    - store_test_results:
+        path: out/test-results
+    - store_artifacts:
+        path: out/zuper-rs-lint
+        destination: zuper-rs-lint
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  lint-pr-ready:
+    environment:
+      CARGO_HOME: /root/.cargo
+      CIRCLEVAR_PIPELINE_CONFIG_FILE_PATH: << pipeline.config.file_path >>
+      CIRCLEVAR_PIPELINE_CONFIG_REF: << pipeline.config.ref >>
+      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_NAME: << pipeline.config.repository.name >>
+      CIRCLEVAR_PIPELINE_CONFIG_REPOSITORY_URL: << pipeline.config.repository.url >>
+      CIRCLEVAR_PIPELINE_CONFIG_SHA: << pipeline.config.sha >>
+      CIRCLEVAR_PIPELINE_DEFINITION_ID: << pipeline.definition.id >>
+      CIRCLEVAR_PIPELINE_DEPLOY_COMPONENT_NAME: << pipeline.deploy.component_name >>
+      CIRCLEVAR_PIPELINE_DEPLOY_CURRENT_VERSION: << pipeline.deploy.current_version >>
+      CIRCLEVAR_PIPELINE_DEPLOY_ENVIRONMENT_NAME: << pipeline.deploy.environment_name >>
+      CIRCLEVAR_PIPELINE_DEPLOY_NAMESPACE: << pipeline.deploy.namespace >>
+      CIRCLEVAR_PIPELINE_DEPLOY_REASON: << pipeline.deploy.reason >>
+      CIRCLEVAR_PIPELINE_DEPLOY_TARGET_VERSION: << pipeline.deploy.target_version >>
+      CIRCLEVAR_PIPELINE_EVENT_ACTION: << pipeline.event.action >>
+      CIRCLEVAR_PIPELINE_EVENT_CONTEXT_GITHUB_PR_URL: << pipeline.event.context.github.pr_url >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_AFTER: << pipeline.event.github.after >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_COMMENT_BODY: << pipeline.event.github.comment.body >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_HEAD_COMMIT_URL: << pipeline.event.github.head_commit.url >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_LABEL_NAME: << pipeline.event.github.label.name >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF: << pipeline.event.github.pull_request.base.ref >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_SHA: << pipeline.event.github.pull_request.base.sha >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_DRAFT: << pipeline.event.github.pull_request.draft >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_REF: << pipeline.event.github.pull_request.head.ref >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_HEAD_SHA: << pipeline.event.github.pull_request.head.sha >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_MERGED: << pipeline.event.github.pull_request.merged >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_NUMBER: << pipeline.event.github.pull_request.number >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_TITLE: << pipeline.event.github.pull_request.title >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_URL: << pipeline.event.github.pull_request.url >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REF: << pipeline.event.github.ref >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_NAME: << pipeline.event.github.repository.name >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_OWNER_LOGIN: << pipeline.event.github.repository.owner.login >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_REPOSITORY_URL: << pipeline.event.github.repository.url >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_AVATAR_URL: << pipeline.event.github.sender.avatar_url >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_LOGIN: << pipeline.event.github.sender.login >>
+      CIRCLEVAR_PIPELINE_EVENT_GITHUB_SENDER_TYPE: << pipeline.event.github.sender.type >>
+      CIRCLEVAR_PIPELINE_EVENT_NAME: << pipeline.event.name >>
+      CIRCLEVAR_PIPELINE_GIT_BASE_REVISION: << pipeline.git.base_revision >>
+      CIRCLEVAR_PIPELINE_GIT_BRANCH: << pipeline.git.branch >>
+      CIRCLEVAR_PIPELINE_GIT_BRANCH_IS_DEFAULT: << pipeline.git.branch.is_default >>
+      CIRCLEVAR_PIPELINE_GIT_COMMIT_AUTHOR_LOGIN: << pipeline.git.commit.author_login >>
+      CIRCLEVAR_PIPELINE_GIT_COMMIT_BODY: << pipeline.git.commit.body >>
+      CIRCLEVAR_PIPELINE_GIT_COMMIT_SUBJECT: << pipeline.git.commit.subject >>
+      CIRCLEVAR_PIPELINE_GIT_COMMIT_URL: << pipeline.git.commit.url >>
+      CIRCLEVAR_PIPELINE_GIT_REPO_ID: << pipeline.git.repo_id >>
+      CIRCLEVAR_PIPELINE_GIT_REPO_NAME: << pipeline.git.repo_name >>
+      CIRCLEVAR_PIPELINE_GIT_REPO_OWNER: << pipeline.git.repo_owner >>
+      CIRCLEVAR_PIPELINE_GIT_REPO_URL: << pipeline.git.repo_url >>
+      CIRCLEVAR_PIPELINE_GIT_REVISION: << pipeline.git.revision >>
+      CIRCLEVAR_PIPELINE_GIT_TAG: << pipeline.git.tag >>
+      CIRCLEVAR_PIPELINE_ID: << pipeline.id >>
+      CIRCLEVAR_PIPELINE_INTEGRATION_SOURCE: << pipeline.integration_source >>
+      CIRCLEVAR_PIPELINE_NAME: << pipeline.name >>
+      CIRCLEVAR_PIPELINE_NUMBER: << pipeline.number >>
+      CIRCLEVAR_PIPELINE_PROJECT_GIT_URL: << pipeline.project.git_url >>
+      CIRCLEVAR_PIPELINE_PROJECT_SLUG: << pipeline.project.slug >>
+      CIRCLEVAR_PIPELINE_PROJECT_TYPE: << pipeline.project.type >>
+      CIRCLEVAR_PIPELINE_SCHEDULE_ID: << pipeline.schedule.id >>
+      CIRCLEVAR_PIPELINE_SCHEDULE_NAME: << pipeline.schedule.name >>
+      CIRCLEVAR_PIPELINE_TRIGGER_ID: << pipeline.trigger.id >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_BRANCH: << pipeline.trigger_parameters.gitlab.branch >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_CHECKOUT_SHA: << pipeline.trigger_parameters.gitlab.checkout_sha >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_EMAIL: << pipeline.trigger_parameters.gitlab.commit_author_email >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_AUTHOR_NAME: << pipeline.trigger_parameters.gitlab.commit_author_name >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_MESSAGE: << pipeline.trigger_parameters.gitlab.commit_message >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_SHA: << pipeline.trigger_parameters.gitlab.commit_sha >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TIMESTAMP: << pipeline.trigger_parameters.gitlab.commit_timestamp >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_COMMIT_TITLE: << pipeline.trigger_parameters.gitlab.commit_title >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_DEFAULT_BRANCH: << pipeline.trigger_parameters.gitlab.default_branch >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_IS_FORK_MERGE_REQUEST: << pipeline.trigger_parameters.gitlab.is_fork_merge_request >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REF: << pipeline.trigger_parameters.gitlab.ref >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_NAME: << pipeline.trigger_parameters.gitlab.repo_name >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_REPO_URL: << pipeline.trigger_parameters.gitlab.repo_url >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_TYPE: << pipeline.trigger_parameters.gitlab.type >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_AVATAR: << pipeline.trigger_parameters.gitlab.user_avatar >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_ID: << pipeline.trigger_parameters.gitlab.user_id >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_NAME: << pipeline.trigger_parameters.gitlab.user_name >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_USER_USERNAME: << pipeline.trigger_parameters.gitlab.user_username >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_WEB_URL: << pipeline.trigger_parameters.gitlab.web_url >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_GITLAB_X_GITLAB_EVENT_ID: << pipeline.trigger_parameters.gitlab.x_gitlab_event_id >>
+      CIRCLEVAR_PIPELINE_TRIGGER_PARAMETERS_WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
+      CIRCLEVAR_PIPELINE_TRIGGER_RECEIVED_AT: << pipeline.trigger.received_at >>
+      CIRCLEVAR_PIPELINE_TRIGGER_TYPE: << pipeline.trigger.type >>
+      ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
+      ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    resource_class: small.gen2
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: zuper-rs-ci-tools initialize-git-submodules
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          export CARGO_TARGET_DIR="$(pwd)/target"
+          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: Prefetch locked Cargo dependencies
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          zuper-rs-lint --version
+    - run:
         name: Resolve pull-request base context
         command: zuper-rs-ci-tools resolve-pr-base
     - run:
-        name: Generate zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED
+        name: Generate pull-request readiness lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint-pr-ready --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only CI-PR-CHANGE-FRAGMENT --only RUST-PR-VERSION-MINOR-OR-MAJOR
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -729,7 +865,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil cff46b28edd44d64d71e24315ecda5b3
+# sigil 93933c773e341c9e98a1291764de17ea
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
 # template-meta template-version=2.1
 # template-meta zuper-templating-version=8.31.2901010000

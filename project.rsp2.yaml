@@ -1,6 +1,15 @@
 circleci:
   active: true
-  resource_class: zuper-ci-ns/r4
+  resource_classes:
+    tag-upload.tag-upload: small.gen2
+    fresh.lint-fresh: small.gen2
+    test.pre-gate: small.gen2
+    test.test-compile: zuper-ci-ns/r4
+    test.test-run: small.gen2
+    test.test-upload: small.gen2
+    test.test-report: small.gen2
+    test.rustfmt: small.gen2
+    test.lint: small.gen2
 
 version_style:
   storage: only_tag
