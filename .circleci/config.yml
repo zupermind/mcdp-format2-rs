@@ -52,6 +52,7 @@ workflows:
   test:
     jobs:
     - pre-gate:
+        context: <<pipeline.parameters.context_name>>
         filters:
           tags:
             ignore: /.*/
@@ -116,111 +117,16 @@ orbs:
 jobs:
   pre-gate:
     docker:
-    - image: cimg/base:stable
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
     resource_class: small.gen2
     steps:
     - checkout
     - run:
         name: Verify pull-request head contains its target branch
-        command: |
-          set -eu
-
-          if [ -z "${CIRCLE_SHA1:-}" ]; then
-            echo "CIRCLE_SHA1 is required for pull-request target-containment checks." >&2
-            exit 1
-          fi
-
-          if ! pull_request_heads="$(git ls-remote --refs origin 'refs/pull/*/head')"; then
-            echo "Cannot query GitHub pull-request head refs from origin." >&2
-            exit 1
-          fi
-          pull_request_numbers="$(
-            printf '%s\n' "${pull_request_heads}" |
-              awk -v sha="${CIRCLE_SHA1}" '
-                $1 == sha {
-                  ref = $2
-                  sub("^refs/pull/", "", ref)
-                  sub("/head$", "", ref)
-                  print ref
-                }
-              '
-          )"
-          if [ -z "${pull_request_numbers}" ]; then
-            case "${CIRCLE_BRANCH:-}" in
-              z7-stage|z7-prod|z7-stage-lupa)
-                trunk_ref="refs/heads/${CIRCLE_BRANCH}"
-                if ! trunk_head="$(git ls-remote --heads origin "${trunk_ref}")"; then
-                  echo "Cannot query current trunk ref ${trunk_ref} from origin." >&2
-                  exit 1
-                fi
-                if ! printf '%s\n' "${trunk_head}" | awk -v sha="${CIRCLE_SHA1}" '$1 == sha { found = 1 } END { exit !found }'; then
-                  echo "Pipeline commit ${CIRCLE_SHA1} is not the current commit of trunk branch ${CIRCLE_BRANCH}." >&2
-                  exit 1
-                fi
-                echo "Non-pull-request pipeline commit ${CIRCLE_SHA1} is current on trunk branch ${CIRCLE_BRANCH}."
-                exit 0
-                ;;
-              *)
-                echo "No GitHub pull-request head ref matches ${CIRCLE_SHA1}, and ${CIRCLE_BRANCH:-<unset>} is not a recognized trunk branch." >&2
-                echo "Refusing to start expensive CI jobs without target-containment evidence." >&2
-                exit 1
-                ;;
-            esac
-          fi
-
-          cleanup_merge_ref() {
-            for pull_request_number in ${pull_request_numbers}; do
-              git update-ref -d "refs/zuper-pre-gate/pull/${pull_request_number}/merge" >/dev/null 2>&1 || true
-            done
-          }
-          trap cleanup_merge_ref EXIT
-          for pull_request_number in ${pull_request_numbers}; do
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Invalid GitHub pull-request head ref number: ${pull_request_number}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-pre-gate/pull/${pull_request_number}/merge"
-            merge_ref_attempt=1
-            merge_ref_attempts=15
-            merge_ref_ready=false
-            merge_ref_reason="merge ref has not been fetched"
-            while [ "${merge_ref_attempt}" -le "${merge_ref_attempts}" ]; do
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-              if git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-                # GitHub may update the pull head before it refreshes this synthetic ref's second parent.
-                # Only its first parent identifies the target; Circle's exact pipeline SHA identifies the head.
-                target_sha="$(git rev-parse "${merge_ref}^1")"
-                if ! target_branch_heads="$(git ls-remote --heads origin)"; then
-                  merge_ref_reason="cannot query current target-branch heads"
-                elif ! printf '%s\n' "${target_branch_heads}" | awk -v sha="${target_sha}" '$1 == sha { found = 1 } END { exit !found }'; then
-                  merge_ref_reason="merge ref identifies target ${target_sha}, which is not a current branch head"
-                else
-                  merge_ref_ready=true
-                  break
-                fi
-              else
-                merge_ref_reason="merge ref is unavailable"
-              fi
-
-              if [ "${merge_ref_attempt}" -lt "${merge_ref_attempts}" ]; then
-                echo "Pull-request ${pull_request_number} ${merge_ref_reason}; retrying after GitHub ref propagation."
-                sleep 2
-              fi
-              merge_ref_attempt=$((merge_ref_attempt + 1))
-            done
-            if [ "${merge_ref_ready}" != true ]; then
-              echo "Cannot obtain a current GitHub merge ref for pull request ${pull_request_number}: ${merge_ref_reason}." >&2
-              exit 1
-            fi
-            if ! git merge-base --is-ancestor "${target_sha}" "${CIRCLE_SHA1}"; then
-              echo "Pull-request head ${CIRCLE_SHA1} does not contain target commit ${target_sha}." >&2
-              echo "Update the pull-request branch before running expensive CI jobs." >&2
-              exit 1
-            fi
-            echo "Pull-request ${pull_request_number} head ${CIRCLE_SHA1} contains target commit ${target_sha}."
-          done
+        command: zuper-rs-ci-tools verify-pr-target-contained
   tag-upload:
     environment:
       CARGO_HOME: /root/.cargo
@@ -231,10 +137,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -347,10 +250,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -368,36 +268,7 @@ jobs:
           zuper-rs-lint --version
     - run:
         name: Resolve pull-request base context
-        command: |
-          if [ -n "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF:-}" ] && [ "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" != "<nil>" ]; then
-            printf 'export ZUPER_RS_LINT_PR_BASE_REF=%q\n' "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" >> "${BASH_ENV}"
-          elif [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
-            # OAuth base_revision is the previous branch build, not the PR target. GitHub's merge-ref first parent is the exact target commit.
-            pull_request_url="${CIRCLE_PULL_REQUEST%/}"
-            pull_request_number="${pull_request_url##*/}"
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Cannot extract a numeric pull-request number from CIRCLE_PULL_REQUEST=${CIRCLE_PULL_REQUEST}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-rs-lint/pull/${pull_request_number}/merge"
-            cleanup_merge_ref() {
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-            }
-            trap cleanup_merge_ref EXIT
-            if ! git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-              echo "Cannot fetch GitHub pull-request merge ref refs/pull/${pull_request_number}/merge" >&2
-              exit 1
-            fi
-            if ! pull_request_base_sha="$(git rev-parse "${merge_ref}^1")"; then
-              echo "Cannot resolve the first parent of GitHub pull-request merge ref ${merge_ref}" >&2
-              exit 1
-            fi
-            cleanup_merge_ref
-            trap - EXIT
-            printf 'export ZUPER_RS_LINT_PR_BASE_SHA=%q\n' "${pull_request_base_sha}" >> "${BASH_ENV}"
-          fi
+        command: zuper-rs-ci-tools resolve-pr-base
     - run:
         name: Generate zuper-rs-lint reports
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED
@@ -502,10 +373,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -521,38 +389,6 @@ jobs:
         command: |
           saferun --version
           zuper-rs-lint --version
-    - run:
-        name: Resolve pull-request base context
-        command: |
-          if [ -n "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF:-}" ] && [ "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" != "<nil>" ]; then
-            printf 'export ZUPER_RS_LINT_PR_BASE_REF=%q\n' "${CIRCLEVAR_PIPELINE_EVENT_GITHUB_PULL_REQUEST_BASE_REF}" >> "${BASH_ENV}"
-          elif [ -n "${CIRCLE_PULL_REQUEST:-}" ]; then
-            # OAuth base_revision is the previous branch build, not the PR target. GitHub's merge-ref first parent is the exact target commit.
-            pull_request_url="${CIRCLE_PULL_REQUEST%/}"
-            pull_request_number="${pull_request_url##*/}"
-            case "${pull_request_number}" in
-              ''|*[!0-9]*)
-                echo "Cannot extract a numeric pull-request number from CIRCLE_PULL_REQUEST=${CIRCLE_PULL_REQUEST}" >&2
-                exit 1
-                ;;
-            esac
-            merge_ref="refs/zuper-rs-lint/pull/${pull_request_number}/merge"
-            cleanup_merge_ref() {
-              git update-ref -d "${merge_ref}" >/dev/null 2>&1 || true
-            }
-            trap cleanup_merge_ref EXIT
-            if ! git fetch --no-tags --quiet origin "+refs/pull/${pull_request_number}/merge:${merge_ref}"; then
-              echo "Cannot fetch GitHub pull-request merge ref refs/pull/${pull_request_number}/merge" >&2
-              exit 1
-            fi
-            if ! pull_request_base_sha="$(git rev-parse "${merge_ref}^1")"; then
-              echo "Cannot resolve the first parent of GitHub pull-request merge ref ${merge_ref}" >&2
-              exit 1
-            fi
-            cleanup_merge_ref
-            trap - EXIT
-            printf 'export ZUPER_RS_LINT_PR_BASE_SHA=%q\n' "${pull_request_base_sha}" >> "${BASH_ENV}"
-          fi
     - run:
         name: Generate fresh zuper-rs-lint reports
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only RUST-CARGO-LOCK-ZUPER-ADVANCED
@@ -577,10 +413,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -612,10 +445,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare the environment
         command: |
@@ -636,13 +466,7 @@ jobs:
         destination: build-stats
     - run:
         name: pre-circle-tests
-        command: |
-          TARGET=pre-circle-tests
-          if make -n $TARGET ; then
-              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make pre-circle-tests
-          else
-              echo "Target $TARGET not defined"
-          fi
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-tests
     - run:
         name: Compile and archive coverage tests
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
@@ -670,10 +494,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare the environment
         command: |
@@ -736,10 +557,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare the environment
         command: |
@@ -793,10 +611,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare the environment
         command: |
@@ -842,10 +657,7 @@ jobs:
     - checkout
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -875,42 +687,10 @@ jobs:
     - checkout
     - run:
         name: Hydrate Git LFS files
-        command: |
-          if ! command -v git-lfs >/dev/null 2>&1; then
-            git_lfs_version=3.7.1
-            case "$(uname -m)" in
-              arm64|aarch64)
-                git_lfs_arch=arm64
-                git_lfs_sha256=76260fb34f4ee622ff0a66b857e5954aa49c7e343a92e57a1ec4a760618c94b2
-                ;;
-              x86_64|amd64)
-                git_lfs_arch=amd64
-                git_lfs_sha256=b5b1b641c0648c83661fa9eda991cd3eff945264dabc2cdf411a80dfe7ec0970
-                ;;
-              *)
-                echo "unsupported macOS architecture: $(uname -m)" >&2
-                exit 1
-                ;;
-            esac
-            git_lfs_root="$PWD/tmp/git-lfs"
-            git_lfs_archive="$git_lfs_root/git-lfs.zip"
-            git_lfs_bin_dir="$git_lfs_root/bin"
-            mkdir -p "$git_lfs_bin_dir"
-            curl -fsSL \
-              "https://github.com/git-lfs/git-lfs/releases/download/v${git_lfs_version}/git-lfs-darwin-${git_lfs_arch}-v${git_lfs_version}.zip" \
-              -o "$git_lfs_archive"
-            printf '%s  %s\n' "$git_lfs_sha256" "$git_lfs_archive" | shasum -a 256 -c -
-            unzip -jo "$git_lfs_archive" "git-lfs-${git_lfs_version}/git-lfs" -d "$git_lfs_bin_dir"
-            export PATH="$git_lfs_bin_dir:$PATH"
-          fi
-          git lfs install --local
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git lfs pull
+        command: zuper-rs-ci-tools hydrate-git-lfs
     - run:
         name: Initialize Git submodules
-        command: |
-          eval "$(ssh-agent -s)"
-          printf '%s' "${ZUPER_UTILS_BUILD_DEPLOY_KEY_B64}" | base64 --decode | ssh-add -
-          GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new' git submodule update --init --recursive
+        command: zuper-rs-ci-tools initialize-git-submodules
     - run:
         name: Prepare Cargo configuration
         command: |
@@ -949,7 +729,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil f693d310445427422fd62d452092992b
+# sigil cff46b28edd44d64d71e24315ecda5b3
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
 # template-meta template-version=2.1
-# template-meta zuper-templating-version=8.29.2901010000
+# template-meta zuper-templating-version=8.31.2901010000
