@@ -75,7 +75,7 @@ checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.4",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -178,7 +178,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 3.0.4",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -353,9 +353,9 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "indexmap"
-version = "2.14.1"
+version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07aa2048142242915a31d35844fb311e0e53fcca590c3a0a40dcf1b841fa09eb"
+checksum = "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -429,9 +429,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "1.2.2"
+version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30d65c71f1ce40ab09135ce117d742b9f8a19ff91a41a8b57ed50bc2de59c427"
+checksum = "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8"
 dependencies = [
  "libc",
  "wasi",
@@ -533,7 +533,7 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.4",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -615,9 +615,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.4"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6275cddf4610d1775e6d1fe9469b2e77d0f39fd98fb7450901b821e0c53649f"
+checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -647,7 +647,7 @@ checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.4",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -754,9 +754,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "9.6.2608291959"
+version = "9.6.2609051324"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "87b6a75bb505dd0f7aa306407200f544d37e43555365712d7bfabffbb1222a06"
+checksum = "53e599eccaee42cdba5aad78728e7a19b34a09750c14e35fa38a1643cc8b807a"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.6.2608291959"
+version = "9.6.2609051324"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "57cf21d175bbe5a35f2caf629e078a2e5b2feac4f324985aa2202361bc84b2cf"
+checksum = "facb3fd35f895d7b82397e27e06984654cb9ac1c32227fcf8c09a46efa90ce93"
 dependencies = [
  "serde",
  "serde_json",
@@ -782,9 +782,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.1.2608291958"
+version = "9.1.2609051321"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "0fe620ca7bfcfecd7940ed0f74bc091bd5e2055df234e54a7999645d18cd3da2"
+checksum = "55726a43b465d3d21a025594fc041816ce5e8d083375f8821f0847be867a14ac"
 dependencies = [
  "colored",
  "indexmap",
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.1.2608291958"
+version = "9.1.2609051321"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "e13972732856f002fd8ed23caaeb70ef302bbba2455a920654ac49ee57878ff5"
+checksum = "cb588d0a09bf8f4b248665f77917b719aad41e88740cd2af354ab28f397c64ea"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -807,9 +807,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.1.2608291958"
+version = "9.1.2609051321"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "33d6cdd603dd97ffb0ff7ce48df760dbaff2d3a5cf914e593b2e8252476c78db"
+checksum = "9603e687638ca8c4586678cd16aa3aca524f58aa4adfdfadaa34a2af3569a44c"
 dependencies = [
  "indexmap",
  "zuper-errors2",
