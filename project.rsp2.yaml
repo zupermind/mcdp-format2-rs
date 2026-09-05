@@ -4,7 +4,7 @@ circleci:
     tag-upload.tag-upload: small.gen2
     fresh.lint-fresh: small.gen2
     test.pre-gate: small.gen2
-    test.test-compile: zuper-ci-ns/r4
+    test.test-compile: zuper-ci-ns/c4m24
     test.test-run: small.gen2
     test.test-upload: small.gen2
     test.test-report: small.gen2
