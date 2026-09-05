@@ -13,8 +13,8 @@ test:
 
 coverage:
 	cargo llvm-cov nextest --release --workspace --all-targets --no-report --test-threads 4
-	cargo llvm-cov report --html --output-dir tmp/coverage
-	cargo llvm-cov report --summary-only
+	cargo llvm-cov report --release --html --output-dir tmp/coverage
+	cargo llvm-cov report --release --summary-only
 
 lint:
 	zuper-rs-lint run --manifest-path Cargo.toml
@@ -31,6 +31,6 @@ upload:
 upload-no-verify:
 	zuper-figaro-cargo upload --which last-tag --allow-dirty --no-verify
 
-# sigil 8776b621922577d10cf4160442b8dd1c
+# sigil f62ef07a4de0063523ac9716d47ec130
 # template-meta template-version=2.1
-# template-meta zuper-templating-version=8.31.2901010000
+# template-meta zuper-templating-version=8.33.2901010000
