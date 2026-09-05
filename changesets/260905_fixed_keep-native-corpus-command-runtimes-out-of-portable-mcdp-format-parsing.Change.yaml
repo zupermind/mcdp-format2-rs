@@ -1,0 +1,9 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-lupa-2609-MISSING-TASK-repair-wasm
+category: fixed
+commits: []
+date: '2026-09-05'
+issues: []
+kind: fix
+status: COMPLETED
+title: Keep native corpus command runtimes out of portable MCDP format parsing
