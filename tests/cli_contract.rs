@@ -4,6 +4,7 @@ use std::process::Command;
 
 type TestResult = Result<(), Box<dyn Error + Send + Sync>>;
 
+// Nextest relocates archived binaries and exposes their extracted paths at runtime.
 fn _binary() -> PathBuf {
     std::env::var_os("NEXTEST_BIN_EXE_mcdp_format2_rs_load")
         .map(PathBuf::from)
