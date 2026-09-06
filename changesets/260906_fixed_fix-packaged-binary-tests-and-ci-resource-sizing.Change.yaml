@@ -1,0 +1,8 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+category: fixed
+commits: []
+date: '2026-09-06'
+issues: []
+kind: ci
+status: COMPLETED
+title: Fix packaged binary tests and CI resource sizing

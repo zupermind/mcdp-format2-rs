@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "mcdp-format2-rs"
-version = "3.0.2901010000"
+version = "3.1.2901010000"
 dependencies = [
  "ciborium",
  "datatest-stable",
@@ -754,9 +754,9 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-cli"
-version = "9.6.2609051424"
+version = "9.7.2609060036"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "5e71b69d0909ec0f577a1371ad41f6166f64a4a66e371aa0211211fc2ab3c433"
+checksum = "73a729543e8e45c49bb5fe264d0dcfff748ad977e55fa48aee240e4fd4de0435"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.6.2609051424"
+version = "9.7.2609060036"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "5ff6bdc60fafec7107d1bb1464654992baa8becd96ea419925cbbdc5909fd360"
+checksum = "3c422015ed0b40470906abc99aa0c38e81521b98495e8781113cdac74fc61b56"
 dependencies = [
  "serde",
  "serde_json",
@@ -782,9 +782,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.1.2609051414"
+version = "9.1.2609051746"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "56710a0c46ee5e811bb6bdc5b3f5b500497db63c41165f6a4ae38300be829e03"
+checksum = "121e505b83b8ae57801789fe7845aeddafafc9d9077620f3d76606d8b6a3d53d"
 dependencies = [
  "colored",
  "indexmap",
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.1.2609051414"
+version = "9.1.2609051746"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "c3f6d0b4da22b46ffe141b92d627bdfa2f1dd4a6c764d88d8f4ca5b93e4e3128"
+checksum = "a345affaa921afc07d85c31b0e23128c00cf842458c4dfa31654afd8bfb81b31"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -807,9 +807,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.1.2609051414"
+version = "9.1.2609051746"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "90a9c8c0d984532fcfe8bc22132af05f05f8437645c35e2a7e02e3d2db213a24"
+checksum = "c1e0e593f52dcfdd5f0c9a163ab8b0d43adf3860a4a7ca50c55065429e43666f"
 dependencies = [
  "indexmap",
  "zuper-errors2",
