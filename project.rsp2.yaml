@@ -5,7 +5,7 @@ circleci:
     fresh.lint-fresh: small.gen2
     test.pre-gate: small.gen2
     test.test-compile: zuper-ci-ns/c4m24
-    test.test-run: small.gen2
+    test.test-run: zuper-ci-ns/c4m8
     test.test-upload: small.gen2
     test.test-report: small.gen2
     test.rustfmt: small.gen2
