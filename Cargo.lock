@@ -100,6 +100,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "autocfg"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,6 +373,15 @@ dependencies = [
 
 [[package]]
 name = "defmt"
+version = "0.3.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0963443817029b2024136fc4dd07a5107eb8f977eaf18fcd1fdeb11306b64ad"
+dependencies = [
+ "defmt 1.1.1",
+]
+
+[[package]]
+name = "defmt"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2953bfe4f93bbd20cc71198842756f77d161884c99ebbabc41d80231ded88d1"
@@ -484,10 +499,12 @@ dependencies = [
 
 [[package]]
 name = "faster-hex"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7223ae2d2f179b803433d9c830478527e92b8117eab39460edae7f1614d9fb73"
+checksum = "04839bdf9d8c10f66806fad16b852fc72aab80873aebc3cb69d85b4fa41543ed"
 dependencies = [
+ "autocfg",
+ "defmt 0.3.100",
  "heapless",
  "serde",
 ]
@@ -1662,7 +1679,7 @@ version = "0.2.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ab1baf72f08796de0260609515130699b890ac25f30e610ad894bc5856cafdb"
 dependencies = [
- "defmt",
+ "defmt 1.1.1",
  "jiff-core",
  "jiff-static",
  "jiff-tzdb-platform",
@@ -1679,7 +1696,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e52fe76043ccecc9005d2305ebaadf7d7fc0cc89ca6baa10a94d6bc68c7128c"
 dependencies = [
- "defmt",
+ "defmt 1.1.1",
  "log",
 ]
 
@@ -2614,18 +2631,18 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zuper-built-support"
-version = "9.4.2609231000"
+version = "9.4.2609231416"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "71d2933b44e19f1b84aad628172a3b862a2e4f0a6498a160370275f38b8bba9e"
+checksum = "1ac918c648854a66eea0d4364f31a1011e4bb324d0f9f08c05626209032b9203"
 dependencies = [
  "built",
 ]
 
 [[package]]
 name = "zuper-cli"
-version = "9.7.2609231000"
+version = "9.7.2609231416"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "ffe9cb31f2eff3963d5b89282ab3632f38673df88ecf2e0a65fc36d6149f47f2"
+checksum = "c85d2e89fb2544017134da40301b51c57c1b5dad22698085a7c0a9dbc4e60eaf"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -2641,9 +2658,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.7.2609231000"
+version = "9.7.2609231416"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "706c4716111caaf05224d0c220d6c7e291db12b6952f04450b6a1b8de6c6dbc2"
+checksum = "afe6795e8e58a140262325301915d36d2d448445cf6c6a6d6c27e25b7738c3e5"
 dependencies = [
  "serde",
  "serde_json",
@@ -2651,9 +2668,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.2.2609231011"
+version = "9.2.2609231424"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "fa1d13a418f4a44b4c00ca91f83d0de42ad5126b52dbbaf75fe663778374428e"
+checksum = "7fa2cb0cade55781352d31a83da57e8f83d268aa8ee3d82f4c8e567b4b8bfaae"
 dependencies = [
  "colored",
  "indexmap",
@@ -2666,9 +2683,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.2.2609231011"
+version = "9.2.2609231424"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "ad8ce013c0a5dc8c497fc02667ccd5dee360538d54df0244b7c74cdf6a5e6814"
+checksum = "99ad98f82a654e601ef5a5ab52863f6a819578d1a74fa4a8df902752af9dbd6e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2678,9 +2695,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.2.2609231011"
+version = "9.2.2609231424"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "57cf0b3279b093cc67ed84264dc708ba660958d3fb0505d8adfbcf71c2f3cc0d"
+checksum = "3ca0b73004732ef422e9e340dfdd736cb688be2eb7f9aac2b94d9b6405f4d75b"
 dependencies = [
  "indexmap",
  "zuper-built-support",
