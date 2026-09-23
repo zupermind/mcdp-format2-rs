@@ -2623,9 +2623,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli"
-version = "9.7.2609230626"
+version = "9.7.2609230647"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "630d65b01c21868140324ddf705feab27a52c89f15128a5b35d75b94e18baa8f"
+checksum = "e39b734a71be8c81e3098fa17ef9c68e3fbbe40e7a6c26c415b1b05301e2f2f0"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -2641,9 +2641,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.7.2609230626"
+version = "9.7.2609230647"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "9eb6c2b0132ab3f6697f4c16bf2fd9518b2f12685ae96940eef6b80ffbbdb378"
+checksum = "a1e15765299f089becf302f107f416010453d8c9fdf3fc91d4a1a8d8c68d3f44"
 dependencies = [
  "serde",
  "serde_json",
@@ -2651,9 +2651,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2"
-version = "9.2.2609230637"
+version = "9.2.2609230657"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "fabbdfc22588b316a79400aa6d07a62c4c712cfb4adeda3a814aea2f50fe69ec"
+checksum = "ae0d81a3e4ffe8bac1fd325a08b9a68a1898f7c306c5ed6ca8d94c02d1eacaa8"
 dependencies = [
  "colored",
  "indexmap",
@@ -2666,9 +2666,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-derive"
-version = "9.2.2609230637"
+version = "9.2.2609230657"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "8b0120e8316fdc901253f6744da8446fe699769abb9839f12bbbb6bc48aedb1b"
+checksum = "40037241e95a449572211da41cbd3f9f1549eec3fc3b6df696508cb8af0f37f2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2678,9 +2678,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-errors2-elab"
-version = "9.2.2609230637"
+version = "9.2.2609230657"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "385e6fc72db471bdf687a4151a95e68013ef0c7b5a9b40547069a77dba756091"
+checksum = "9e30c0fdf8df5b42d9a8972d8899b3eebf101f37fb9de4a97a50e94815e9222d"
 dependencies = [
  "indexmap",
  "zuper-built-support",
