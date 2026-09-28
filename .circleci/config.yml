@@ -11,7 +11,7 @@ workflows:
     when: << pipeline.parameters.run_install >>
     jobs:
     - install-linux:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           branches:
             only:
@@ -21,7 +21,7 @@ workflows:
           tags:
             ignore: /.*/
     - install-osx:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           branches:
             only:
@@ -33,7 +33,7 @@ workflows:
   tag-upload:
     jobs:
     - tag-upload:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           branches:
             only:
@@ -45,7 +45,7 @@ workflows:
   fresh:
     jobs:
     - lint-fresh:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           branches:
             ignore:
@@ -57,21 +57,21 @@ workflows:
   lint-pr-ready:
     jobs:
     - lint-pr-ready:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
   test:
     jobs:
     - pre-gate:
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
     - test-compile:
         requires:
         - pre-gate
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -79,7 +79,7 @@ workflows:
     - test-run:
         requires:
         - test-compile
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -89,7 +89,7 @@ workflows:
         requires:
         - test-compile
         - test-run-1: terminal
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -97,7 +97,7 @@ workflows:
     - test-run-aggregate:
         requires:
         - test-run-1
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -105,7 +105,7 @@ workflows:
     - test-report:
         requires:
         - test-run-aggregate
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -113,14 +113,14 @@ workflows:
     - rustfmt:
         requires:
         - pre-gate
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
     - lint:
         requires:
         - pre-gate
-        context: <<pipeline.parameters.context_name>>
+        context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
@@ -129,7 +129,7 @@ orbs:
 jobs:
   pre-gate:
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -137,14 +137,25 @@ jobs:
     steps:
     - checkout
     - run:
+        name: Prepare pre-gate result directory
+        command: mkdir -p out/test-results
+    - run:
+        name: pre-circle-pre-gate
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-pre-gate --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-pre-gate
+    - run:
         name: Verify pull-request head contains its target branch
-        command: zuper-rs-ci-tools verify-pr-target-contained
+        command: zuper-rs-ci-tools verify-pr-target-contained --junit-report out/test-results/pre-gate.xml
+    - store_test_results:
+        path: out/test-results
   tag-upload:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: small.gen2
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    resource_class: zuper-ci-ns/c4m4
     steps:
     - checkout
     - run:
@@ -157,6 +168,9 @@ jobs:
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: pre-circle-tag-upload
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tag-upload --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-tag-upload
     - run:
         name: Create release tag
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/tag --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-figaro-cargo tag --extra-tag-suffix "/${Z_DISTRO}-${Z_UNIVERSE}" --allow-dirty
@@ -253,7 +267,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -271,6 +285,9 @@ jobs:
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
     - run:
+        name: pre-circle-lint
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-lint
+    - run:
         name: Prefetch locked Cargo dependencies
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
     - run:
@@ -279,8 +296,11 @@ jobs:
           saferun --version
           zuper-rs-lint --version
     - run:
+        name: Require zuper-rs-lint ^8.37
+        command: zuper-rs-lint version-required '^8.37'
+    - run:
         name: Generate zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --exclude RUST-CARGO-LOCK-ZUPER-ADVANCED --exclude CI-PR-CHANGE-FRAGMENT --exclude CI-PR-TARGET-ANCESTOR --exclude RUST-PR-VERSION-MINOR-OR-MAJOR
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite ci-timeless --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -376,7 +396,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -394,6 +414,9 @@ jobs:
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
     - run:
+        name: pre-circle-lint-pr-ready
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-lint-pr-ready --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-lint-pr-ready
+    - run:
         name: Prefetch locked Cargo dependencies
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
     - run:
@@ -405,8 +428,11 @@ jobs:
         name: Resolve pull-request base context
         command: zuper-rs-ci-tools resolve-pr-base
     - run:
+        name: Require zuper-rs-lint ^8.37
+        command: zuper-rs-lint version-required '^8.37'
+    - run:
         name: Generate pull-request readiness lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint-pr-ready --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only CI-PR-CHANGE-FRAGMENT --only RUST-PR-VERSION-MINOR-OR-MAJOR
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint-pr-ready --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite pull-request --json-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.json" --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
     - store_test_results:
         path: out/test-results
     - store_artifacts:
@@ -502,44 +528,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
-    resource_class: small.gen2
-    steps:
-    - checkout
-    - run:
-        name: Initialize Git submodules
-        command: zuper-rs-ci-tools initialize-git-submodules
-    - run:
-        name: Prepare Cargo configuration
-        command: |
-          export CARGO_TARGET_DIR="$(pwd)/target"
-          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
-          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
-    - run:
-        name: Prefetch locked Cargo dependencies
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
-    - run:
-        name: Report tool versions
-        command: |
-          saferun --version
-          zuper-rs-lint --version
-    - run:
-        name: Generate fresh zuper-rs-lint reports
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint ci --only RUST-CARGO-LOCK-ZUPER-ADVANCED
-    - store_test_results:
-        path: out/test-results
-    - store_artifacts:
-        path: out/zuper-rs-lint
-        destination: zuper-rs-lint
-    - store_artifacts:
-        path: out/saferun
-        destination: saferun
-  rustfmt:
-    environment:
-      CARGO_HOME: /root/.cargo
-    docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -556,6 +545,55 @@ jobs:
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: pre-circle-lint-fresh
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-lint-fresh --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-lint-fresh
+    - run:
+        name: Prefetch locked Cargo dependencies
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/cargo-fetch --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo fetch --locked
+    - run:
+        name: Report tool versions
+        command: |
+          saferun --version
+          zuper-rs-lint --version
+    - run:
+        name: Require zuper-rs-lint ^8.37
+        command: zuper-rs-lint version-required '^8.37'
+    - run:
+        name: Generate fresh zuper-rs-lint reports
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite ci-fresh --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
+    - store_test_results:
+        path: out/test-results
+    - store_artifacts:
+        path: out/zuper-rs-lint
+        destination: zuper-rs-lint
+    - store_artifacts:
+        path: out/saferun
+        destination: saferun
+  rustfmt:
+    environment:
+      CARGO_HOME: /root/.cargo
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    resource_class: small.gen2
+    steps:
+    - checkout
+    - run:
+        name: Initialize Git submodules
+        command: zuper-rs-ci-tools initialize-git-submodules
+    - run:
+        name: Prepare Cargo configuration
+        command: |
+          export CARGO_TARGET_DIR="$(pwd)/target"
+          printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
+          zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: pre-circle-rustfmt
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-rustfmt --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-rustfmt
     - run:
         name: Report tool versions
         command: |
@@ -572,7 +610,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -587,7 +625,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache
     - run:
         name: Report tool versions
         command: |
@@ -603,16 +641,28 @@ jobs:
         name: pre-circle-tests
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-tests --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-tests
     - run:
+        name: pre-circle-test-compile
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-test-compile
+    - run:
         name: Compile and archive coverage tests
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
+    - run:
+        name: Record Nextest archive host
+        command: |
+          rustc -vV | sed -n 's/^host: //p' > out/nextest-archive-host.txt
+          if [ ! -s out/nextest-archive-host.txt ]; then
+            echo 'Could not record the Nextest archive compiler host.' >&2
+            exit 1
+          fi
     - persist_to_workspace:
         root: '.'
         paths:
         - out/nextest-coverage-tests.tar.zst
+        - out/nextest-archive-host.txt
     - store_artifacts:
         path: out/saferun
         destination: saferun
-    resource_class: zuper-ci-ns/c4m4
+    resource_class: zuper-ci-ns/c4m4-amd64
   test-run:
     environment:
       CARGO_HOME: /root/.cargo
@@ -621,7 +671,7 @@ jobs:
       RUST_BACKTRACE: full
       ZUPER_CIRCLE_LOGICAL_JOB: test-run
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -636,7 +686,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache
     - run:
         name: Report tool versions
         command: |
@@ -648,10 +698,22 @@ jobs:
     - attach_workspace:
         at: '.'
     - run:
+        name: pre-circle-test-run
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-test-run --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-test-run
+    - run:
         name: Run coverage tests
         command: |
+          archive_host="$(cat out/nextest-archive-host.txt 2>/dev/null || true)"
+          runner_host="$(rustc -vV | sed -n 's/^host: //p')"
+          if [ -z "${archive_host}" ] || [ -z "${runner_host}" ] || [ "${archive_host}" != "${runner_host}" ]; then
+            printf 'Nextest archive host mismatch: compiled on %s; current runner is %s (job %s, runner class %s). Use architecture-compatible resource classes for test-compile and archive consumers.\n' "${archive_host:-missing}" "${runner_host:-missing}" "${CIRCLE_JOB:-unknown}" "${ZUPER_CI_RUNNER_CLASS:-managed}" >&2
+            exit 1
+          fi
+          # nextest canonicalizes the extraction directory before it unpacks the
+          # archive, and a fresh checkout of this job does not have it yet.
+          mkdir -p target/llvm-cov-target
           set +e
-          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw XDG_CACHE_HOME="$(pwd)/out/zuper-testing-cache" zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition hash:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
+          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-run --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw XDG_CACHE_HOME="$(pwd)/out/zuper-testing-cache/node-${CIRCLE_NODE_INDEX}" zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest --no-report --archive-file out/nextest-coverage-tests.tar.zst -v --no-fail-fast --profile ci --config-file .circleci/nextest.toml --partition slice:$((CIRCLE_NODE_INDEX + 1))/${CIRCLE_NODE_TOTAL}
           test_status=$?
           set -e
           printf '%s\n' "${test_status}" > "out/test-status/node-${CIRCLE_NODE_INDEX}.status"
@@ -669,13 +731,19 @@ jobs:
         path: out/test-results
     - run:
         name: Report test outcome
+        when: always
         command: |
-          test_status="$(cat "out/test-status/node-${CIRCLE_NODE_INDEX}.status")"
+          status_file="out/test-status/node-${CIRCLE_NODE_INDEX}.status"
+          if [ ! -f "${status_file}" ]; then
+            printf 'Test outcome unavailable: %s was not produced; tests may not have run.\n' "${status_file}" >&2
+            exit 1
+          fi
+          test_status="$(cat "${status_file}")"
           exit "${test_status}"
     - store_artifacts:
         path: out/saferun
         destination: saferun
-    resource_class: zuper-ci-ns/c4m8
+    resource_class: zuper-ci-ns/c4m8-amd64
     parallelism: 1
     parameters:
       worker_index:
@@ -684,7 +752,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -699,7 +767,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache
     - run:
         name: Report tool versions
         command: |
@@ -711,11 +779,30 @@ jobs:
     - attach_workspace:
         at: '.'
     - run:
+        name: pre-circle-test-upload
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-test-upload --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-test-upload
+    - run:
         name: test-upload
         command: |
           TARGET=test-upload
           if make -n "${TARGET}"; then
-              saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-upload --heartbeat 30s --stats-interval 5s -- env XDG_CACHE_HOME="$(pwd)/out/zuper-testing-cache" zuper-rs-ci-tools cargo-wrap make "${TARGET}"
+              # Every test-run node persists its own cache directory, so the
+              # attached workspace holds one disjoint directory per node.
+              upload_status=0
+              upload_runs=0
+              for cache in out/zuper-testing-cache/node-*; do
+                  if [ ! -d "${cache}" ]; then
+                      continue
+                  fi
+                  upload_runs=$((upload_runs + 1))
+                  node="$(basename "${cache}")"
+                  saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-upload-${node} --heartbeat 30s --stats-interval 5s -- env XDG_CACHE_HOME="$(pwd)/${cache}" zuper-rs-ci-tools cargo-wrap make "${TARGET}" || upload_status=$?
+              done
+              # Success with nothing done must not look like success with uploads done.
+              if [ "${upload_runs}" -eq 0 ]; then
+                  echo "no per-node cache directories, nothing to upload"
+              fi
+              exit "${upload_status}"
           else
               echo "Target ${TARGET} not defined"
           fi
@@ -724,9 +811,9 @@ jobs:
         destination: saferun
     resource_class: small.gen2
   test-run-aggregate:
-    resource_class: small.gen2
+    resource_class: zuper-ci-ns/r1
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -738,7 +825,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -753,7 +840,7 @@ jobs:
           export CARGO_TARGET_DIR="$(pwd)/target"
           printf 'export CARGO_TARGET_DIR=%q\n' "${CARGO_TARGET_DIR}" >> "${BASH_ENV}"
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools all
-          mkdir -p out/test-results out/test-status out/zuper-testing-cache target/llvm-cov-target
+          mkdir -p out/test-results out/test-status out/zuper-testing-cache
     - run:
         name: Report tool versions
         command: |
@@ -764,6 +851,18 @@ jobs:
           make --version
     - attach_workspace:
         at: '.'
+    - run:
+        name: Verify Nextest archive host
+        command: |
+          archive_host="$(cat out/nextest-archive-host.txt 2>/dev/null || true)"
+          runner_host="$(rustc -vV | sed -n 's/^host: //p')"
+          if [ -z "${archive_host}" ] || [ -z "${runner_host}" ] || [ "${archive_host}" != "${runner_host}" ]; then
+            printf 'Nextest archive host mismatch: compiled on %s; current runner is %s (job %s, runner class %s). Use architecture-compatible resource classes for test-compile and archive consumers.\n' "${archive_host:-missing}" "${runner_host:-missing}" "${CIRCLE_JOB:-unknown}" "${ZUPER_CI_RUNNER_CLASS:-managed}" >&2
+            exit 1
+          fi
+    - run:
+        name: pre-circle-test-report
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-test-report --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-test-report
     - run:
         name: Extract coverage archive
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/coverage-extract --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap cargo nextest list --archive-file out/nextest-coverage-tests.tar.zst --extract-to target/llvm-cov-target --extract-overwrite
@@ -783,11 +882,11 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci:${Z_DISTRO}-${Z_UNIVERSE}
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
-    resource_class: zuper-ci-ns/c4m4
+    resource_class: zuper-ci-ns/c4m4-amd64
     steps:
     - checkout
     - run:
@@ -798,6 +897,9 @@ jobs:
         command: |
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
+    - run:
+        name: pre-circle-install-linux
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-install-linux --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-install-linux
     - run:
         name: Report tool versions
         command: |
@@ -832,6 +934,9 @@ jobs:
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
     - run:
+        name: pre-circle-install-osx
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-install-osx --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-install-osx
+    - run:
         name: Report tool versions
         command: |
           saferun --version
@@ -864,7 +969,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil 5689764cec8c5ee875b86d2af8dfd4e8
+# sigil 1af814b725a72484672b39c0b026e321
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
-# template-meta template-version=2.1
-# template-meta zuper-templating-version=8.35.2901010000
+# template-meta template-version=2.3
+# template-meta zuper-templating-version=8.67.2609271439

@@ -17,6 +17,7 @@ coverage:
 	cargo llvm-cov report --release --summary-only
 
 lint:
+	zuper-rs-lint version-required '^8.36'
 	zuper-rs-lint run --manifest-path Cargo.toml
 
 docs:
@@ -31,6 +32,6 @@ upload:
 upload-no-verify:
 	zuper-figaro-cargo upload --which last-tag --allow-dirty --no-verify
 
-# sigil f62ef07a4de0063523ac9716d47ec130
-# template-meta template-version=2.1
-# template-meta zuper-templating-version=8.33.2901010000
+# sigil 0752a61468b0cd36ebea7da1b4529c0b
+# template-meta template-version=2.3
+# template-meta zuper-templating-version=8.67.2609271439

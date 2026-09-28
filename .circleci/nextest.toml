@@ -12,12 +12,16 @@ archive.include = [
     { path = "nextest-extra", relative-to = "target", on-missing = "ignore" },
 ]
 
+# Bound a stuck test: report it as slow every period and terminate it after
+# this many periods. A descriptor slow-timeout pair replaces this default.
+slow-timeout = { period = "60s", terminate-after = 30 }
+
 [profile.ci.junit]
 path = "junit.xml"
 # These are the default values, specified for clarity.
 store-success-output = false
 store-failure-output = true
 
-# sigil 2729444e62ffc35839336e9ae54edfb1
-# template-meta template-version=2.1
-# template-meta zuper-templating-version=8.31.2901010000
+# sigil fb990948a6a606ef00ae049e0ab71b1e
+# template-meta template-version=2.3
+# template-meta zuper-templating-version=8.67.2609271439
