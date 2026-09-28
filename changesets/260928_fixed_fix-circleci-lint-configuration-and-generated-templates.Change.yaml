@@ -1,0 +1,11 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-lupa-2609-MISSING-TASK-fix-mcdp-format2-rs-ci
+category: fixed
+commits:
+- '810a50ce7ebbe6ef2934e78200a40462a2b46634'
+- '56bafc16c3d0f1d8d6928d9fe29b804642c17b47'
+date: '2026-09-28'
+issues: []
+kind: ci
+status: COMPLETED
+title: Fix CircleCI lint configuration and generated templates
