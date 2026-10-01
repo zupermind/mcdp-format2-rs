@@ -1,12 +1,9 @@
-.PHONY: check cargo-check cargo-check-wasm test coverage lint docs tag upload upload-no-verify
+.PHONY: check cargo-check test coverage lint docs tag upload upload-no-verify
 
-check: cargo-check cargo-check-wasm
+check: cargo-check
 
 cargo-check:
 	cargo check --workspace --keep-going --all-targets
-
-cargo-check-wasm:
-	cargo check --workspace --keep-going --lib --target wasm32-unknown-unknown
 
 test:
 	cargo nextest run --release --workspace --all-targets
@@ -17,7 +14,7 @@ coverage:
 	cargo llvm-cov report --release --summary-only
 
 lint:
-	zuper-rs-lint version-required '^8.36'
+	zuper-rs-lint version-required '^15.0'
 	zuper-rs-lint run --manifest-path Cargo.toml
 
 docs:
@@ -32,6 +29,6 @@ upload:
 upload-no-verify:
 	zuper-figaro-cargo upload --which last-tag --allow-dirty --no-verify
 
-# sigil 0752a61468b0cd36ebea7da1b4529c0b
-# template-meta template-version=2.3
-# template-meta zuper-templating-version=8.67.2609271439
+# sigil 064fef10be8527dd83caacbe3b3c86b0
+# template-meta template-version=2.5
+# template-meta zuper-templating-version=15.3.2610010122

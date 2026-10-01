@@ -1,9 +1,6 @@
-.PHONY: check cargo-check install
+.PHONY: check install
 
 check: cargo-check
-
-cargo-check:
-	cargo check --workspace --all-targets --keep-going
 
 install:
 	cargo install --path . --locked --force
@@ -21,7 +18,7 @@ all:
 # zero documents. Hence `--min-files`, which is enforced in the binary (see
 # `check_min_files`) so that a recipe edit cannot restore the vacuous pass.
 # Override to widen the corpus, e.g.
-#   make test SAMPLES=../../../mcdp-formats-samples/data MIN_FILES=100000
+#   make test-release SAMPLES=../../../mcdp-formats-samples/data MIN_FILES=100000
 #
 # `SAMPLES=examples` runs the 889-document snapshot vendored in this repo via
 # Git LFS instead. That is the only setting that works from a checkout of this
@@ -34,9 +31,6 @@ all:
 SAMPLES ?= ../../../mcdp-formats-samples/data/repos/unittests
 SAMPLES_PATTERN ?= *.mcdp2.yaml.gz
 MIN_FILES ?= 100
-
-test:
-	cargo run --  --pattern '$(SAMPLES_PATTERN)' --min-files $(MIN_FILES) $(SAMPLES)
 
 test-release:
 	cargo run -r --  --pattern '$(SAMPLES_PATTERN)' --min-files $(MIN_FILES) $(SAMPLES)

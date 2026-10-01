@@ -1,0 +1,11 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-v3-2610-TEMPLATE-91-ci-regeneration
+category: changed
+commits: []
+date: '2026-10-01'
+description: Regenerate .circleci/config.yml, rust-common.mk and .gitignore with zuper-templating 15.3 (light jobs on small with the checks image, test jobs on self-hosted classes, branch-major checks in pre-gate) and set the RSP2 schema version, the compile-per-shard layout and the resource classes in the descriptor. The version is bumped from 3.1 to 3.2.
+issues:
+- TEMPLATE-91
+kind: ci
+status: COMPLETED
+title: Regenerate CI with the final templating and fix the gating lints
