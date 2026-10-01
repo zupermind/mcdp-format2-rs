@@ -23,10 +23,18 @@
 .env
 .env.local
 
+# Prepared WebAssembly payloads and what their preparation writes into the checkout are never
+# tracked (zuper-wasm: ZW-LAYOUT-IGNORED, ZW-NEVER-COMMITTED)
+**/assets/wasm/
+/.zuper/wasm-prepare.lock
+/.zuper/wasm-staging/
+/.zuper/wasm-target/
+/.zuper/wasm-dx/
+
 # Log files
 
-# sigil 96fe96cdc4805fc9f151555698bdda8d
-# template-meta template-version=2.3
-# template-meta zuper-templating-version=8.67.2609271439
+# sigil 669f4a0b46dc424a87da5144037010e5
+# template-meta template-version=2.5
+# template-meta zuper-templating-version=15.3.2610010122
 
 
