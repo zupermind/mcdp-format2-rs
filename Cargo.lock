@@ -1793,7 +1793,7 @@ dependencies = [
 
 [[package]]
 name = "mcdp-format2-rs"
-version = "3.1.2901010000"
+version = "3.2.2901010000"
 dependencies = [
  "ciborium",
  "datatest-stable",
@@ -2511,9 +2511,9 @@ dependencies = [
 
 [[package]]
 name = "yoke-derive"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33811428bee40dbceb6d545e95754741d17a6aef9a4849f0fd62e2ba4f412a78"
+checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2618,9 +2618,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli"
-version = "9.8.2609270733"
+version = "9.8.2609290642"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "841102dd757a552ec5ae517d8b73657ac04a19c6ae64cd4328b3a13548d1ad2c"
+checksum = "63b6435af55542da2739b229463f1bb50415f1996fd1371694bfaa052ddb22e1"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -2636,9 +2636,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.8.2609270733"
+version = "9.8.2609290642"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "647dfb1bab4a67af381676a557182e69482f4467494643e5894b588406502133"
+checksum = "a8dd7b3c0fed9af0684c5aa20326ce1a418c381d5ae7fa19cfe506b2a55cce95"
 dependencies = [
  "serde",
  "serde_json",
