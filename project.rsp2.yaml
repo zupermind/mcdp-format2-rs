@@ -1,15 +1,17 @@
+schema_version: "2.0"
 circleci:
   active: true
+  job_layout: compile-per-shard
   resource_classes:
     tag-upload.tag-upload: zuper-ci-ns/c4m4
-    fresh.lint-fresh: small.gen2
-    test.pre-gate: small.gen2
-    test.test-compile: zuper-ci-ns/c4m4
+    fresh.lint-fresh: small
+    test.pre-gate: small
+    test.test-compile: zuper-ci-ns/c4m8
     test.test-run: zuper-ci-ns/c4m8
-    test.test-upload: small.gen2
-    test.test-report: small.gen2
-    test.rustfmt: small.gen2
-    test.lint: small.gen2
+    test.test-upload: zuper-ci-ns/c4m8
+    test.test-report: small
+    test.rustfmt: small
+    test.lint: small
 
 version_style:
   storage: only_tag
