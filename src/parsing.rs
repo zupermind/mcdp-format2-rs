@@ -206,6 +206,7 @@ fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> ZResult<ciborium::value:
     let result = match yaml_value {
         serde_yaml::Value::Null => Value::Null,
         serde_yaml::Value::Bool(b) => Value::Bool(b),
+        // TODO: MCDP-105: Preserve exact unsigned integers before floating conversion.
         serde_yaml::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
                 Value::Integer(i.into())
@@ -248,6 +249,7 @@ fn json_to_cbor_value(json_value: serde_json::Value) -> ZResult<ciborium::value:
     let result = match json_value {
         serde_json::Value::Null => Value::Null,
         serde_json::Value::Bool(b) => Value::Bool(b),
+        // TODO: MCDP-105: Preserve exact unsigned integers before floating conversion.
         serde_json::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
                 Value::Integer(i.into())
