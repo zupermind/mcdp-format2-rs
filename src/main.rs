@@ -58,6 +58,7 @@ fn check_min_files(matched: &[PathBuf], config: &Config) -> ZResult<(), Mf2rErro
     )
 }
 
+// TODO: MCDP-106: Forward the invocation capability and route loader messages through its sink.
 fn load(paths: Vec<PathBuf>, pattern: &str, verbose: bool, min_files: usize) -> ZResult<(), Mf2rError> {
     let config = build_config(paths, pattern, verbose, min_files)?;
 
