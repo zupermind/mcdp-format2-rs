@@ -58,29 +58,40 @@ fn check_min_files(matched: &[PathBuf], config: &Config) -> ZResult<(), Mf2rErro
     )
 }
 
-// TODO: MCDP-106: Forward the invocation capability and route loader messages through its sink.
-fn load(paths: Vec<PathBuf>, pattern: &str, verbose: bool, min_files: usize) -> ZResult<(), Mf2rError> {
-    let config = build_config(paths, pattern, verbose, min_files)?;
+/// Attach the command-level context to a loader error.
+fn domain<T>(result: ZResult<T, Mf2rError>) -> zuper_cli::CliResult<T> {
+    zuper_errors2::zerror_because!(result, zuper_cli::CliError::DomainError, "could not load the selected MCDP files",)
+}
+
+async fn load(
+    out: &dyn zuper_cli::CommandOutput,
+    paths: Vec<PathBuf>,
+    pattern: &str,
+    verbose: bool,
+    min_files: usize,
+) -> zuper_cli::CliResult<()> {
+    let config = domain(build_config(paths, pattern, verbose, min_files))?;
 
     if config.verbose {
-        println!("Using pattern: {}", config.pattern.as_str());
+        out.message(&format!("Using pattern: {}\n", config.pattern.as_str()))
+            .await?;
     }
 
     let mut all_paths: Vec<PathBuf> = Vec::new();
 
     for path in &config.paths {
-        let paths = list_paths(path, config.pattern.clone())?;
+        let paths = domain(list_paths(path, config.pattern.clone()))?;
         all_paths.extend(paths);
     }
-    check_min_files(&all_paths, &config)?;
+    domain(check_min_files(&all_paths, &config))?;
 
     let n = all_paths.len();
     for (i, p) in all_paths.iter().enumerate() {
-        println!("{}/{}: {}", i, n, p.display());
-        let root: Root = read_mcdp_root(p)?;
+        out.message(&format!("{}/{}: {}\n", i, n, p.display())).await?;
+        let root: Root = domain(read_mcdp_root(p))?;
 
         if config.verbose {
-            println!("Parsed:\n{:#?}", root);
+            out.message(&format!("Parsed:\n{:#?}\n", root)).await?;
         }
     }
 
@@ -88,17 +99,13 @@ fn load(paths: Vec<PathBuf>, pattern: &str, verbose: bool, min_files: usize) -> 
 }
 
 async fn load_command(
-    _invocation: &dyn zuper_cli::InvocationTrait,
+    invocation: &dyn zuper_cli::InvocationTrait,
     paths: Vec<PathBuf>,
     pattern: String,
     verbose: bool,
     min_files: std::num::NonZeroUsize,
 ) -> zuper_cli::CliResult<zuper_cli::RunOutcome> {
-    zuper_errors2::zerror_because!(
-        load(paths, &pattern, verbose, min_files.get()),
-        zuper_cli::CliError::DomainError,
-        "could not load the selected MCDP files",
-    )?;
+    load(invocation.output(), paths, &pattern, verbose, min_files.get()).await?;
     Ok(zuper_cli::RunOutcome::completed_success())
 }
 
@@ -177,6 +184,73 @@ mod tests {
     #[test]
     fn a_minimum_of_zero_is_rejected_by_the_parser() -> ZTestResult<()> {
         ztest_ensure!(std::num::NonZeroUsize::new(0).is_none(), "the generated CLI input type must reject zero");
+        Ok(())
+    }
+
+    /// An invocation whose output is captured, as an embedder would inject it.
+    struct CapturingInvocation {
+        output: zuper_cli::CapturedOutput,
+    }
+
+    impl zuper_cli::InvocationTrait for CapturingInvocation {
+        fn visible_path(&self) -> String {
+            String::new()
+        }
+
+        fn output(&self) -> &dyn zuper_cli::CommandOutput {
+            &self.output
+        }
+    }
+
+    fn fixture() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/basic_scalar_ops/models/ceil.dp.mcdp2.yaml.gz")
+    }
+
+    /// Run the handler on the fixture and return (stdout, stderr) of the sink.
+    async fn captured_load(structured: bool, verbose: bool) -> ZTestResult<(String, String)> {
+        let invocation = CapturingInvocation {
+            output: zuper_cli::CapturedOutput::new(structured),
+        };
+        let Some(min_files) = std::num::NonZeroUsize::new(1) else {
+            ztest_bail!("1 is nonzero");
+        };
+        if load_command(&invocation, vec![fixture()], String::from("*.mcdp2.*"), verbose, min_files)
+            .await
+            .is_err()
+        {
+            ztest_bail!("loading the fixture failed");
+        }
+        Ok((
+            String::from_utf8(invocation.output.stdout_captured().await)?,
+            String::from_utf8(invocation.output.stderr_captured().await)?,
+        ))
+    }
+
+    /// MCDP-106: the loader's messages go to the invocation's sink.
+    #[tokio::test]
+    async fn loader_messages_go_to_the_text_sink() -> ZTestResult<()> {
+        let progress = format!("0/1: {}\n", fixture().display());
+
+        let (stdout, stderr) = captured_load(false, false).await?;
+        ztest_ensure!(stdout == progress, "unexpected captured stdout: {stdout:?}");
+        ztest_ensure!(stderr.is_empty(), "unexpected captured stderr: {stderr:?}");
+
+        let (stdout, _) = captured_load(false, true).await?;
+        let Some(after_pattern) = stdout.strip_prefix("Using pattern: *.mcdp2.*\n") else {
+            ztest_bail!("verbose output does not start with the pattern: {stdout:?}");
+        };
+        let Some(after_progress) = after_pattern.strip_prefix(&progress) else {
+            ztest_bail!("verbose output lacks the progress line: {stdout:?}");
+        };
+        ztest_ensure!(after_progress.starts_with("Parsed:\n"), "verbose output lacks the parsed root: {stdout:?}");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn loader_messages_go_to_stderr_of_a_structured_sink() -> ZTestResult<()> {
+        let (stdout, stderr) = captured_load(true, false).await?;
+        ztest_ensure!(stdout.is_empty(), "structured stdout must stay empty: {stdout:?}");
+        ztest_ensure!(stderr == format!("0/1: {}\n", fixture().display()), "unexpected captured stderr: {stderr:?}");
         Ok(())
     }
 

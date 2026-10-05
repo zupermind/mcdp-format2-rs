@@ -1,0 +1,12 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-v3-2610-MCDP-104-unsigned-and-sink
+category: fixed
+commits: []
+date: '2026-10-05'
+description: JSON and YAML integers above i64::MAX now convert to exact CBOR integers instead of lossy floats (MCDP-105). The mcdp-format2-rs load command writes its progress and verbose output through the invocation's output sink, so embedders capture it and structured mode keeps stdout clean (MCDP-106).
+issues:
+- MCDP-105
+- MCDP-106
+kind: fix
+status: COMPLETED
+title: Exact unsigned integers and sink-routed loader messages

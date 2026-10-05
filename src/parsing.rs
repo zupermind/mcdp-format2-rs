@@ -206,10 +206,13 @@ fn yaml_to_cbor_value(yaml_value: serde_yaml::Value) -> ZResult<ciborium::value:
     let result = match yaml_value {
         serde_yaml::Value::Null => Value::Null,
         serde_yaml::Value::Bool(b) => Value::Bool(b),
-        // TODO: MCDP-105: Preserve exact unsigned integers before floating conversion.
         serde_yaml::Value::Number(n) => {
+            // Integers above i64::MAX are still exact as u64; only a number
+            // that is neither becomes a float.
             if let Some(i) = n.as_i64() {
                 Value::Integer(i.into())
+            } else if let Some(u) = n.as_u64() {
+                Value::Integer(u.into())
             } else if let Some(f) = n.as_f64() {
                 Value::Float(f)
             } else {
@@ -249,10 +252,13 @@ fn json_to_cbor_value(json_value: serde_json::Value) -> ZResult<ciborium::value:
     let result = match json_value {
         serde_json::Value::Null => Value::Null,
         serde_json::Value::Bool(b) => Value::Bool(b),
-        // TODO: MCDP-105: Preserve exact unsigned integers before floating conversion.
         serde_json::Value::Number(n) => {
+            // Integers above i64::MAX are still exact as u64; only a number
+            // that is neither becomes a float.
             if let Some(i) = n.as_i64() {
                 Value::Integer(i.into())
+            } else if let Some(u) = n.as_u64() {
+                Value::Integer(u.into())
             } else if let Some(f) = n.as_f64() {
                 Value::Float(f)
             } else {
@@ -513,6 +519,129 @@ mod tests {
             err.contains_code(&error_code_for_external_type::<std::io::Error>()),
             "expected the concrete std::io::Error to remain recoverable",
         );
+        Ok(())
+    }
+
+    /// Integer boundaries around the signed/unsigned split.
+    const UNSIGNED_BOUNDARIES: [u64; 4] = [i64::MAX.unsigned_abs(), 1 << 63, (1 << 63) + 1, u64::MAX];
+
+    fn gzip(bytes: &[u8]) -> ZTestResult<Vec<u8>> {
+        use std::io::Write;
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(bytes)?;
+        Ok(encoder.finish()?)
+    }
+
+    fn cbor_bytes(value: &ciborium::Value) -> ZTestResult<Vec<u8>> {
+        let mut bytes = Vec::new();
+        match into_writer(value, &mut bytes) {
+            Ok(()) => Ok(bytes),
+            Err(error) => ztest_bail!("could not encode the CBOR fixture: {error}"),
+        }
+    }
+
+    /// The same scalar in each input format, plain and gzipped.
+    fn encodings(text: &str, cbor: &ciborium::Value) -> ZTestResult<Vec<(DataFormat, Vec<u8>)>> {
+        let cbor = cbor_bytes(cbor)?;
+        Ok(vec![
+            (DataFormat::JSON, text.as_bytes().to_vec()),
+            (DataFormat::YAML, text.as_bytes().to_vec()),
+            (DataFormat::CBOR, cbor.clone()),
+            (DataFormat::JSON_GZ, gzip(text.as_bytes())?),
+            (DataFormat::YAML_GZ, gzip(text.as_bytes())?),
+            (DataFormat::CBOR_GZ, gzip(&cbor)?),
+        ])
+    }
+
+    fn parsed(contents: &[u8], format: &DataFormat) -> ZTestResult<ciborium::Value> {
+        match parse_data(contents, format.clone()) {
+            Ok(value) => Ok(value),
+            Err(_) => ztest_bail!("{format:?} input failed to parse"),
+        }
+    }
+
+    /// MCDP-105: JSON and YAML integers above `i64::MAX` stay exact integers,
+    /// as they do in CBOR, instead of becoming rounded floats.
+    #[test]
+    fn unsigned_integers_stay_exact_in_every_format() -> ZTestResult<()> {
+        for number in UNSIGNED_BOUNDARIES {
+            let expected = ciborium::Value::Integer(number.into());
+            for (format, contents) in encodings(&number.to_string(), &expected)? {
+                let value = parsed(&contents, &format)?;
+                ztest_ensure!(value == expected, "{format:?} turned {number} into {value:?}");
+            }
+
+            let nested = format!("{{\"items\": [{number}, {{\"inner\": {number}}}]}}");
+            for format in [DataFormat::JSON, DataFormat::YAML] {
+                let value = parsed(nested.as_bytes(), &format)?;
+                let ciborium::Value::Map(entries) = &value else {
+                    ztest_bail!("{format:?}: expected a map, got {value:?}");
+                };
+                let [(_, ciborium::Value::Array(items))] = entries.as_slice() else {
+                    ztest_bail!("{format:?}: expected one array entry, got {value:?}");
+                };
+                let [first, ciborium::Value::Map(inner)] = items.as_slice() else {
+                    ztest_bail!("{format:?}: expected [integer, map], got {value:?}");
+                };
+                ztest_ensure!(*first == expected, "{format:?}: array element became {first:?}");
+                let [(_, inner_value)] = inner.as_slice() else {
+                    ztest_bail!("{format:?}: expected one inner entry, got {value:?}");
+                };
+                ztest_ensure!(*inner_value == expected, "{format:?}: map value became {inner_value:?}");
+            }
+        }
+        Ok(())
+    }
+
+    /// Negative integers and fractions keep their existing representation.
+    #[test]
+    fn signed_and_fractional_numbers_are_unchanged() -> ZTestResult<()> {
+        let negative = ciborium::Value::Integer((-5_i64).into());
+        let fraction = ciborium::Value::Float(1.5);
+        for (text, expected) in [("-5", &negative), ("1.5", &fraction)] {
+            for format in [DataFormat::JSON, DataFormat::YAML] {
+                let value = parsed(text.as_bytes(), &format)?;
+                ztest_ensure!(value == *expected, "{format:?} turned {text} into {value:?}");
+            }
+        }
+        Ok(())
+    }
+
+    /// `read` decodes the unsigned range into `u64` and into a generic
+    /// `serde_json::Value` without a float substitution.
+    #[test]
+    fn read_decodes_unsigned_integers_exactly() -> ZTestResult<()> {
+        let directory = std::env::temp_dir().join(format!("mf2r-unsigned-test-{}", std::process::id()));
+        std::fs::create_dir_all(&directory)?;
+        for number in UNSIGNED_BOUNDARIES {
+            let cbor = ciborium::Value::Integer(number.into());
+            for (format, contents) in encodings(&number.to_string(), &cbor)? {
+                let extension = match format {
+                    DataFormat::JSON => "json",
+                    DataFormat::YAML => "yaml",
+                    DataFormat::CBOR => "cbor",
+                    DataFormat::JSON_GZ => "json.gz",
+                    DataFormat::YAML_GZ => "yaml.gz",
+                    DataFormat::CBOR_GZ => "cbor.gz",
+                    DataFormat::Unknown(_) => ztest_bail!("no fixture uses an unknown format"),
+                };
+                let path = directory.join(format!("value-{number}.{extension}"));
+                std::fs::write(&path, &contents)?;
+
+                match read::<u64>(&path) {
+                    Ok(read_back) => ztest_ensure!(read_back == number, "{format:?}: read {read_back} for {number}"),
+                    Err(_) => ztest_bail!("{format:?}: read::<u64> failed for {number}"),
+                }
+                match read::<serde_json::Value>(&path) {
+                    Ok(read_back) => ztest_ensure!(
+                        read_back.as_u64() == Some(number),
+                        "{format:?}: generic value {read_back} for {number}"
+                    ),
+                    Err(_) => ztest_bail!("{format:?}: read::<serde_json::Value> failed for {number}"),
+                }
+            }
+        }
+        std::fs::remove_dir_all(directory)?;
         Ok(())
     }
 }
