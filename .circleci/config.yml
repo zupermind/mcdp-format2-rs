@@ -15,20 +15,14 @@ workflows:
         filters:
           branches:
             only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
             - /^z7-(stage|prod)-v[0-9]+$/
           tags:
             ignore: /.*/
-    - install-osx:
+    - install-linux-arm64:
         context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           branches:
             only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
             - /^z7-(stage|prod)-v[0-9]+$/
           tags:
             ignore: /.*/
@@ -39,9 +33,6 @@ workflows:
         filters:
           branches:
             only:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
             - /^z7-(stage|prod)-v[0-9]+$/
           tags:
             ignore: /.*/
@@ -52,9 +43,6 @@ workflows:
         filters:
           branches:
             ignore:
-            - z7-stage
-            - z7-prod
-            - z7-stage-lupa
             - /^z7-(stage|prod)-v[0-9]+$/
           tags:
             ignore: /.*/
@@ -672,7 +660,7 @@ jobs:
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-test-compile --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-test-compile
     - run:
         name: Compile and archive coverage tests
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --no-default-features --profile ci --config-file .circleci/nextest.toml
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/test-compile --heartbeat 30s --stats-interval 5s -- env CARGO_LLVM_COV_TARGET_DIR=target/llvm-cov-target LLVM_PROFILE_FILE_NAME=node-${CIRCLE_NODE_INDEX}-%m-%p.profraw zuper-rs-ci-tools cargo-wrap cargo llvm-cov nextest-archive --archive-file out/nextest-coverage-tests.tar.zst --all-targets --workspace --no-default-features --profile ci --config-file .circleci/nextest.toml
     - run:
         name: Record per-shard coverage archive host
         command: |
@@ -821,7 +809,7 @@ jobs:
   test-run-aggregate:
     resource_class: small
     docker:
-    - image: cimg/base:2026.09
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -874,14 +862,12 @@ jobs:
   install-linux:
     environment:
       CARGO_HOME: /root/.cargo
-      RUST_BACKTRACE: full
-      ZUPER_CIRCLE_LOGICAL_JOB: test-run
     docker:
     - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
-    resource_class: zuper-ci-ns/c4m8
+    resource_class: zuper-ci-ns/c4m8-amd64
     steps:
     - checkout
     - run:
@@ -903,25 +889,24 @@ jobs:
           make --version
     - run:
         name: Install binaries
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools install-binaries
     - store_artifacts:
-        path: /root/.cargo/bin
+        path: out/install-artifacts
         destination: bin
     - store_artifacts:
         path: out/saferun
         destination: saferun
-  install-osx:
+  install-linux-arm64:
     environment:
-      CARGO_HOME: /Users/circleci/.cargo
-      RUST_BACKTRACE: full
-      ZUPER_CIRCLE_LOGICAL_JOB: test-run
-    machine: true
-    resource_class: zuper-ci-ns/m4-nolimits
+      CARGO_HOME: /root/.cargo
+    docker:
+    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+      auth:
+        username: $DOCKER_IO_READONLY_USERNAME
+        password: $DOCKER_IO_READONLY_TOKEN
+    resource_class: zuper-ci-ns/c4m8-arm64
     steps:
     - checkout
-    - run:
-        name: Hydrate Git LFS files
-        command: zuper-rs-ci-tools hydrate-git-lfs
     - run:
         name: Initialize Git submodules
         command: zuper-rs-ci-tools initialize-git-submodules
@@ -931,8 +916,8 @@ jobs:
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-cargo-config
           zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools prepare-deps
     - run:
-        name: pre-circle-install-osx
-        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-install-osx --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-install-osx
+        name: pre-circle-install-linux-arm64
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/pre-circle-install-linux-arm64 --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools run-if-make-target-exists pre-circle-install-linux-arm64
     - run:
         name: Report tool versions
         command: |
@@ -941,32 +926,15 @@ jobs:
           make --version
     - run:
         name: Install binaries
-        command: |-
-          export CARGO_INSTALL_ROOT="$PWD/out/cargo-install/install-osx"
-          export PATH="$CARGO_INSTALL_ROOT/bin:$PATH"
-          rm -rf "$CARGO_INSTALL_ROOT" "$PWD/out/install-artifacts/install-osx"
-          mkdir -p "$CARGO_INSTALL_ROOT/bin" "$PWD/out/install-artifacts/install-osx"
-          saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap make install
-    - run:
-        name: Stage install binaries
-        command: |-
-          set -eu
-          install_root="$PWD/out/cargo-install/install-osx"
-          artifact_root="$PWD/out/install-artifacts/install-osx"
-          mkdir -p "$artifact_root"
-          for binary in 'mcdp-format2-rs-load'; do
-          source="$install_root/bin/$binary"
-          if [ ! -f "$source" ]; then echo "missing installed workspace binary: $source" >&2; exit 1; fi
-          cp -p "$source" "$artifact_root/"
-          done
+        command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/install --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-ci-tools install-binaries
     - store_artifacts:
-        path: out/install-artifacts/install-osx
+        path: out/install-artifacts
         destination: bin
     - store_artifacts:
         path: out/saferun
         destination: saferun
 
-# sigil c64c001560ce24e19a103272c1bfe984
+# sigil 2ad1f3fd16db26abe8808db43aeb4ae8
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
-# template-meta template-version=2.5
-# template-meta zuper-templating-version=15.3.2610010122
+# template-meta template-version=2.6
+# template-meta zuper-templating-version=15.11.2610040641
