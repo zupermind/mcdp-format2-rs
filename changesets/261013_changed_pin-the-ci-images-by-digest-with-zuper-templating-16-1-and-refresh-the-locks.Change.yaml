@@ -1,0 +1,11 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-v3-2610-TEMPLATE-503-pin-ci-images
+category: changed
+commits: []
+date: '2026-10-13'
+description: Regenerate .circleci/config.yml with zuper-templating 16.1.2610091046, which records every Docker executor image as tag@sha256 digest; lint-fresh (RUST-TEMPLATING-CHECK-FRESH) rejected the earlier unpinned pre-gate image. Refresh Cargo.lock with cargo generate-lockfile (RUST-CARGO-LOCK-ZUPER-ADVANCED-FRESH), and the image tools lock where there is one.
+issues:
+- TEMPLATE-503
+kind: ci
+status: COMPLETED
+title: Pin the CI images by digest with zuper-templating 16.1 and refresh the locks
