@@ -67,33 +67,33 @@ workflows:
         filters:
           tags:
             ignore: /.*/
-        name: test-run-1
+        name: test-default-run-1-of-1
         worker_index: 0
     - test-upload:
         requires:
         - pre-gate
-        - test-run-1: terminal
+        - test-default-run-1-of-1: terminal
         context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
-        name: test-upload
+        name: test-default-upload
     - test-run-aggregate:
         requires:
-        - test-run-1
+        - test-default-run-1-of-1
         context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
-        name: test-run-aggregate
+        name: test-default-aggregate
     - test-report:
         requires:
-        - test-run-aggregate
+        - test-default-aggregate
         context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
           tags:
             ignore: /.*/
-        name: test-report
+        name: test-default-report
     - rustfmt:
         requires:
         - pre-gate
@@ -109,11 +109,11 @@ workflows:
           tags:
             ignore: /.*/
 orbs:
-  codecov: codecov/codecov@6
+  codecov: codecov/codecov@6.0.0
 jobs:
   pre-gate:
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -141,7 +141,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -278,7 +278,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -407,7 +407,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -539,7 +539,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -585,7 +585,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -625,7 +625,7 @@ jobs:
       RUST_BACKTRACE: full
       ZUPER_CIRCLE_LOGICAL_JOB: test-run
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -749,7 +749,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -809,7 +809,7 @@ jobs:
   test-run-aggregate:
     resource_class: small
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-checks:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -821,7 +821,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -848,22 +848,31 @@ jobs:
     - attach_workspace:
         at: '.'
     - store_artifacts:
-        path: out/coverage
-        destination: coverage
+        path: lcov.info
+        destination: coverage/lcov.info
     - store_artifacts:
         path: out/saferun
         destination: saferun
+    - run:
+        name: Require Codecov upload failures
+        when: always
+        command: |
+          set -euo pipefail
+          printf '\nexport CODECOV_FAIL_ON_ERROR=true\n' >> "${BASH_ENV}"
     - store_artifacts:
         path: lcov.info
         destination: coverage/lcov.info
     - codecov/upload:
+        files: lcov.info
+        disable_search: true
+        fail_on_error: true
         when: always
     resource_class: small
   install-linux:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -900,7 +909,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/${DOCKER_TARGET_ORG}/${DOCKER_REPO_PREFIX}zuper-rs-ci-core:${Z_DISTRO}-${Z_UNIVERSE}-v1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -934,7 +943,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil 2ad1f3fd16db26abe8808db43aeb4ae8
+# sigil 41b49deb5cf491ae4a3ab52c1fe32e55
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
 # template-meta template-version=2.6
-# template-meta zuper-templating-version=15.11.2610040641
+# template-meta zuper-templating-version=16.1.2610091046
