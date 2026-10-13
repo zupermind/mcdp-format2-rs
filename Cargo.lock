@@ -2619,9 +2619,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli"
-version = "9.10.2610051809"
+version = "9.11.2610130310"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "534adad2c88101c71031e52e7a19b137698a43dda2079673e407c0057eb5a7a0"
+checksum = "64b36147fff3564db1593e980affb1d8dcb942990e26aab33090a7c7a5617f6c"
 dependencies = [
  "async-trait",
  "erased-serde",
@@ -2637,9 +2637,9 @@ dependencies = [
 
 [[package]]
 name = "zuper-cli-schema-autogen"
-version = "9.10.2610051809"
+version = "9.11.2610130310"
 source = "sparse+https://artifactory.zuper.ai/repository/cargo-virtual-stage/"
-checksum = "80e9705eb73722d3b633c9377b66d9af3c7fea27dbcdc8e6ba54ebbf100baa8c"
+checksum = "95261a9687db9ee81c6ebb3995236e9839796dab4915977432278f89748d1aed"
 dependencies = [
  "serde",
  "serde_json",
