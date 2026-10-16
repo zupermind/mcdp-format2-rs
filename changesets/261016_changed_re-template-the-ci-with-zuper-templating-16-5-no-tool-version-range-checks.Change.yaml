@@ -1,0 +1,11 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-v3-2610-TEMPLATE-516-retemplate
+category: changed
+commits: []
+date: '2026-10-16'
+description: 'Regenerate .circleci/config.yml and rust-common.mk with zuper-templating 16.5, which no longer runs zuper-rs-lint / zuper-rs-ci-tools version-required (TEMPLATE-518): the CI image line decides the tool majors.'
+issues:
+- TEMPLATE-516
+kind: ci
+status: COMPLETED
+title: 'Re-template the CI with zuper-templating 16.5: no tool version-range checks'
