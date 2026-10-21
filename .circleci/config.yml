@@ -41,9 +41,6 @@ workflows:
     - lint-fresh:
         context: << pipeline.git.branch starts-with "z7-prod" and "z7-prod" or pipeline.git.branch starts-with "z7-stage" and "z7-stage" or pipeline.parameters.context_name >>
         filters:
-          branches:
-            ignore:
-            - /^z7-(stage|prod)-v[0-9]+$/
           tags:
             ignore: /.*/
   lint-pr-ready:
@@ -113,7 +110,7 @@ orbs:
 jobs:
   pre-gate:
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -141,7 +138,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -278,7 +275,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -306,9 +303,6 @@ jobs:
         command: |
           saferun --version
           zuper-rs-lint --version
-    - run:
-        name: Require zuper-rs-lint ^15.0
-        command: zuper-rs-lint version-required '^15.0'
     - run:
         name: Generate zuper-rs-lint reports
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite ci-timeless --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
@@ -407,7 +401,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -438,9 +432,6 @@ jobs:
     - run:
         name: Resolve pull-request base context
         command: zuper-rs-ci-tools resolve-pr-base
-    - run:
-        name: Require zuper-rs-lint ^15.0
-        command: zuper-rs-lint version-required '^15.0'
     - run:
         name: Generate pull-request readiness lint reports
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint-pr-ready --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite pull-request --json-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.json" --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
@@ -539,7 +530,7 @@ jobs:
       ZUPER_RS_LINT_OUTPUT_DIR: out/zuper-rs-lint
       ZUPER_RS_LINT_TEST_RESULTS_DIR: out/test-results
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -568,9 +559,6 @@ jobs:
           saferun --version
           zuper-rs-lint --version
     - run:
-        name: Require zuper-rs-lint ^15.0
-        command: zuper-rs-lint version-required '^15.0'
-    - run:
         name: Generate fresh zuper-rs-lint reports
         command: saferun run --no-direnv --standalone --report-dir out/saferun/${CIRCLE_JOB}/node-${CIRCLE_NODE_INDEX}/lint --heartbeat 30s --stats-interval 5s -- zuper-rs-ci-tools cargo-wrap zuper-rs-lint run --suite ci-fresh --html-report "${ZUPER_RS_LINT_OUTPUT_DIR}/report.html" --junit-report "${ZUPER_RS_LINT_TEST_RESULTS_DIR}/zuper-rs-lint.xml"
     - store_test_results:
@@ -585,7 +573,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -625,7 +613,7 @@ jobs:
       RUST_BACKTRACE: full
       ZUPER_CIRCLE_LOGICAL_JOB: test-run
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -749,7 +737,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -809,7 +797,7 @@ jobs:
   test-run-aggregate:
     resource_class: small
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:c6b5f38a76f64c6cee03317b12f1995a682877bc47e452922da527a28883281f
+    - image: docker.io/zupermind/zuper-rs-ci-checks:z7-stage-v1@sha256:7063873cca2cb805fe86e319e7e8e2fb5faabf70e305def3ee49ad21d0be968b
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -821,7 +809,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -872,7 +860,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -909,7 +897,7 @@ jobs:
     environment:
       CARGO_HOME: /root/.cargo
     docker:
-    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:dab12cf0f88fa9434861d366db0fdaf8363846bde7177bff30cf54f9e5f247d1
+    - image: docker.io/zupermind/zuper-rs-ci-core:z7-stage-v1@sha256:60b7acaae65cc891343d9feac74a743ae1a0c59d0a1c2c9bb69c156f62727f68
       auth:
         username: $DOCKER_IO_READONLY_USERNAME
         password: $DOCKER_IO_READONLY_TOKEN
@@ -943,7 +931,7 @@ jobs:
         path: out/saferun
         destination: saferun
 
-# sigil 41b49deb5cf491ae4a3ab52c1fe32e55
+# sigil 27c2a4e375caffa1f1ee1497a8751f75
 # template-meta agent-advice=Do not modify this file directly; it is autogenerated by zuper-templating from project.rsp2.yaml. Modify project.rsp2.yaml instead; direct changes require explicit user permission.
 # template-meta template-version=2.6
-# template-meta zuper-templating-version=16.1.2610091046
+# template-meta zuper-templating-version=16.15.2610201932
