@@ -1,0 +1,11 @@
+# Avoid manually changing this file - use `zuper-changetrack modify` instead
+branch: z7-stage-v3-2611-LINK-306-scorch-slop
+category: removed
+commits: []
+date: '2026-11-12'
+description: The Makefile targets test-release and test-verbose (a run of the mcdp-format2-rs-load binary over the corpus of a sibling checkout with --min-files) and their SAMPLES, SAMPLES_PATTERN and MIN_FILES variables are deleted. tests/datasets.rs drives the vendored examples/ corpus as a cargo test. No Rust code changes.
+issues:
+- LINK-306
+kind: chore
+status: COMPLETED
+title: Delete the corpus-check Makefile targets that CI does not run
