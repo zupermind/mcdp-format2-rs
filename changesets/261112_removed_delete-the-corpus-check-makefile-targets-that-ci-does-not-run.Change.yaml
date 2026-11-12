@@ -3,7 +3,7 @@ branch: z7-stage-v3-2611-LINK-306-scorch-slop
 category: removed
 commits: []
 date: '2026-11-12'
-description: The Makefile targets test-release and test-verbose (a run of the mcdp-format2-rs-load binary over the corpus of a sibling checkout with --min-files) and their SAMPLES, SAMPLES_PATTERN and MIN_FILES variables are deleted. tests/datasets.rs drives the vendored examples/ corpus as a cargo test. No Rust code changes.
+description: The Makefile targets test-release and test-verbose (a run of the mcdp-format2-rs-load binary over the corpus of a sibling checkout with --min-files) and their SAMPLES, SAMPLES_PATTERN and MIN_FILES variables are deleted. tests/datasets.rs drives the vendored examples/ corpus as a cargo test. No Rust code changes. The minor advances to 3.6.2901010000, since 3.5 is already released, and Cargo.lock is regenerated with cargo generate-lockfile.
 issues:
 - LINK-306
 kind: chore
